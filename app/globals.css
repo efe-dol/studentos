@@ -1,15 +1,19 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap');
 @import "tailwindcss";
+
 
 :root {
   --background: #ffffff;
   --foreground: #171717;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+@layer theme {
+  :root {
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+    --font-sans: var(--font-geist-sans);
+    --font-mono: var(--font-geist-mono);
+  }
 }
 
 @media (prefers-color-scheme: dark) {
@@ -19,8 +23,96 @@
   }
 }
 
+:root {
+  --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* custom animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* subtle floating animation for background ornaments */
+@keyframes floatY {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-12px); }
+  100% { transform: translateY(0px); }
+}
+
+/* floating label styles for inputs */
+.field {
+  position: relative;
+}
+.field input,
+.field input[type="date"] {
+  width: 100%;
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.field label {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgba(255,255,255,0.6);
+  pointer-events: none;
+  transition: all 180ms ease-out;
+  font-size: 14px;
+}
+.field input:focus + label,
+.field input:not(:placeholder-shown) + label {
+  top: -8px;
+  transform: none;
+  font-size: 12px;
+  color: rgba(255,255,255,0.85);
+}
+
+/* subtle glass border for card */
+.glass-border {
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+/* small focus glow */
+.focus-glow:focus {
+  box-shadow: 0 6px 18px rgba(59,130,246,0.12);
+  outline: none;
+}
+
+/* decorative circle */
+.decor-circle {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(36px);
+  opacity: 0.12;
+}
+
+/* very subtle background pulse for the whole page */
+@keyframes pulseBg {
+  0% { filter: brightness(1); }
+  50% { filter: brightness(1.035); }
+  100% { filter: brightness(1); }
+}
+
+.bg-pulse {
+  animation: pulseBg 2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bg-pulse { animation: none; }
+  .decor-circle { animation: none; }
 }
