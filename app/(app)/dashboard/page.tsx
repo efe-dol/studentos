@@ -716,11 +716,13 @@ export default function Dashboard() {
                   <p className="text-sm text-gray-400">Keine anstehenden Termine</p>
                 ) : (
                   previewAppointments.map((appointment) => (
-                    <div key={appointment.id} className="flex gap-3 p-2 rounded-lg hover:bg-white/5 transition-all items-center">
-                      <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: appointment.color }}></span>
-                      <span className="text-sm font-medium whitespace-nowrap text-blue-400">
-                        {new Date(appointment.starts_at).toLocaleDateString('de-DE')}
-                      </span>
+                    <div key={appointment.id} className="flex gap-2 p-2 rounded-lg hover:bg-white/5 transition-all flex-col md:flex-row md:items-center">
+                      <div className="flex items-center gap-2 md:gap-3 min-w-0 flex-1">
+                        <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: appointment.color }}></span>
+                        <span className="text-sm font-medium whitespace-nowrap text-blue-400">
+                          {new Date(appointment.starts_at).toLocaleDateString('de-DE')}
+                        </span>
+                      </div>
                       <span className="text-sm text-gray-300 truncate">{appointment.name}</span>
                     </div>
                   ))
@@ -890,7 +892,7 @@ export default function Dashboard() {
                   upcomingAppointments.map((appointment, index) => (
                     <div
                       key={appointment.id}
-                      className="flex items-start justify-between gap-3 p-3 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-all duration-300 hover:scale-[1.01] appointment-item-animate"
+                      className="flex flex-col md:flex-row md:items-start justify-between gap-3 p-3 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-all duration-300 hover:scale-[1.01] appointment-item-animate"
                       style={{ animationDelay: `${Math.min(index * 70, 560)}ms` }}
                     >
                       <div className="min-w-0 flex-1">
@@ -898,16 +900,20 @@ export default function Dashboard() {
                           <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: appointment.color }}></span>
                           <p className="font-medium truncate">{appointment.name}</p>
                         </div>
-                        <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
-                          {new Date(appointment.starts_at).toLocaleDateString('de-DE')} · {new Date(appointment.starts_at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}
+                        <p className="text-xs text-gray-400 mt-1 flex flex-col md:flex-row md:items-center gap-1">
+                          <span className="flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            {new Date(appointment.starts_at).toLocaleDateString('de-DE')}
+                          </span>
+                          <span className="hidden md:inline">·</span>
+                          <span>{new Date(appointment.starts_at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}</span>
                         </p>
                         {appointment.description && (
                           <p className="text-sm text-gray-300 mt-2 break-words">{appointment.description}</p>
                         )}
                       </div>
 
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-shrink-0">
                         <button
                           onClick={() => handleStartEditAppointment(appointment)}
                           className="p-2 rounded-lg hover:bg-blue-500/20 border border-transparent hover:border-blue-400/30 transition-all"
