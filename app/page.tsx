@@ -1,14 +1,24 @@
 'use client';
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import AuthBackground from '@/app/components/AuthBackground';
 
 export default function Home() {
   const [visible, setVisible] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
-    setVisible(true);
-  }, []);
+    // Check if running as installed PWA/native app
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
+                        (window.navigator as any).standalone === true;
+    
+    if (isStandalone) {
+      // Redirect to login if app is installed
+      router.push('/login');
+    } else {
+      setVisible(true);
+    }
+  }, [router]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#0a0a0a] via-[#121212] to-[#1a1a1a] text-white overflow-x-hidden">
@@ -36,22 +46,6 @@ export default function Home() {
             Deine zentrale Plattform für Stundenplan, Hausaufgaben, Noten und mehr.
             Installiere die App auf deinem iPhone oder iPad für den besten Zugang.
           </p>
-
-          {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-4">
-            <Link
-              href="/login"
-              className="px-8 py-4 rounded-xl bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 font-semibold text-lg transition-all transform hover:scale-105 shadow-lg shadow-blue-500/50"
-            >
-              Jetzt anmelden
-            </Link>
-            <Link
-              href="/register"
-              className="px-8 py-4 rounded-xl backdrop-blur-xl bg-white/10 hover:bg-white/20 border border-white/20 font-semibold text-lg transition-all"
-            >
-              Registrieren
-            </Link>
-          </div>
         </div>
 
         {/* Installation Guide */}
