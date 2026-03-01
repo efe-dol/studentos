@@ -154,7 +154,7 @@ export default function Register() {
 
           <div className="field">
             <input
-              className="focus-glow px-4 py-3 rounded-xl text-white placeholder-transparent"
+              className="focus-glow px-4 py-3 rounded-xl text-white placeholder-transparent w-full"
               type="date"
               placeholder=" "
               onChange={e => setBirthdate(e.target.value)}

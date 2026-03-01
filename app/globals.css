@@ -139,6 +139,13 @@ button, a, input {
   width: 100%;
   background: transparent;
   border: 1px solid rgba(255,255,255,0.06);
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Fix for date input on iPad */
+.field input[type="date"]::-webkit-date-and-time-value {
+  text-align: left;
 }
 .field label {
   position: absolute;
