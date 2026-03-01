@@ -22,14 +22,21 @@ export async function updateSession(request: NextRequest) {
       }
     )
 
-    // Refresh die Session
-    const { data: { user } } = await supabase.auth.getUser()
+    // Erhalte die aktuelle Session
+    const { data: { session } } = await supabase.auth.getSession()
 
-    // Wenn auf auth-seiten und user ist nicht authentifiziert, redirect zu login
-    if (!user && (request.nextUrl.pathname.startsWith('/dashboard') || request.nextUrl.pathname.startsWith('/auth'))) {
+    // Wenn auf protected routes und keine Session, redirect zu login
+    if (!session && (request.nextUrl.pathname.startsWith('/dashboard') || request.nextUrl.pathname.startsWith('/auth'))) {
       const loginUrl = request.nextUrl.clone()
       loginUrl.pathname = '/login'
       return NextResponse.redirect(loginUrl)
+    }
+
+    // Wenn auf login/register und Session existiert, redirect zu dashboard
+    if (session && (request.nextUrl.pathname === '/login' || request.nextUrl.pathname === '/register')) {
+      const dashboardUrl = request.nextUrl.clone()
+      dashboardUrl.pathname = '/dashboard'
+      return NextResponse.redirect(dashboardUrl)
     }
   } catch (error) {
     console.error('Middleware error:', error)
