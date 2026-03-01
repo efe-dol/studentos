@@ -368,8 +368,8 @@ export default function Dashboard() {
       </div>
 
       {/* Bottom Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 z-20 border-t border-white/10 backdrop-blur-xl bg-white/5">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex justify-around items-center">
+      <div className="fixed bottom-0 left-0 right-0 z-20 backdrop-blur-md bg-gradient-to-t from-white/5 to-white/[0.02] border-t border-white/10">
+        <div className="max-w-7xl mx-auto px-6 py-2.5 flex justify-around items-center">
           {[
             { id: 'dashboard', label: 'Dashboard', Icon: BarChart3 },
             { id: 'schedule', label: 'Stundenplan', Icon: BookOpen },
@@ -380,10 +380,10 @@ export default function Dashboard() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-all ${
+              className={`flex flex-col items-center gap-1 px-3 py-1.5 rounded-lg transition-all duration-300 ${
                 activeTab === tab.id
-                  ? 'bg-white/20 border border-white/30 text-white'
-                  : 'text-gray-400 hover:text-white'
+                  ? 'bg-gradient-to-br from-blue-500/40 to-purple-500/40 border border-blue-400/50 text-white shadow-lg shadow-blue-500/20'
+                  : 'text-gray-400 hover:text-white hover:bg-white/5'
               }`}
             >
               <tab.Icon className="w-5 h-5" />
