@@ -35,7 +35,7 @@ export default function Login() {
       <AuthBackground />
       <form
         onSubmit={handleLogin}
-        className="relative z-10 w-full max-w-xl p-10 rounded-2xl backdrop-blur-xl bg-white/5 border border-white/10 shadow-2xl animate-[fadeInFast_0.3s_ease-out]"
+        className="relative z-10 w-full max-w-xl p-10 rounded-2xl backdrop-blur-xl bg-white/5 border border-white/10 shadow-2xl animate-[slideUpSmooth_0.6s_cubic-bezier(0.16,1,0.3,1)]"
       >
         <div className="mb-6 text-center">
           <h1 className="text-white text-3xl font-semibold">Anmelden</h1>

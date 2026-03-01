@@ -94,6 +94,17 @@ button, a, input {
   }
 }
 
+@keyframes slideUpSmooth {
+  0% {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* subtle floating animation for background ornaments */
 @keyframes floatY {
   0% { transform: translateY(0px); }
