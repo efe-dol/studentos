@@ -11,6 +11,22 @@ jobs:
     steps:
       - name: Trigger notification processing endpoint
         run: |
-          curl --fail --show-error --silent \
-            -X POST "${{ secrets.STUDENTOS_BASE_URL }}/api/notifications/process" \
-            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"
+          set -euo pipefail
+
+          URL="${{ secrets.STUDENTOS_BASE_URL }}/api/notifications/process"
+          AUTH_HEADER="Authorization: Bearer ${{ secrets.CRON_SECRET }}"
+
+          HTTP_CODE=$(curl --show-error --silent \
+            --output response.json \
+            --write-out "%{http_code}" \
+            -X POST "$URL" \
+            -H "$AUTH_HEADER")
+
+          echo "HTTP status: $HTTP_CODE"
+          echo "Response body:"
+          cat response.json
+
+          if [ "$HTTP_CODE" -lt 200 ] || [ "$HTTP_CODE" -ge 300 ]; then
+            echo "Notification processing failed with status $HTTP_CODE"
+            exit 1
+          fi

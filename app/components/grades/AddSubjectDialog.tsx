@@ -1,6 +1,7 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 
 interface AddSubjectDialogProps {
@@ -22,16 +23,28 @@ export default function AddSubjectDialog({ isOpen, onClose, onAdd }: AddSubjectD
   const [color, setColor] = useState('#3b82f6');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [isMounted, setIsMounted] = useState(false);
 
-  const handleClose = useCallback(() => {
-    if (!isLoading) {
-      setName('');
-      setType('HAUPTFACH');
-      setColor('#3b82f6');
-      setError('');
+  useEffect(() => {
+    setIsMounted(true);
+    return () => setIsMounted(false);
+  }, []);
+
+  const resetForm = useCallback(() => {
+    setName('');
+    setType('HAUPTFACH');
+    setColor('#3b82f6');
+    setError('');
+  }, []);
+
+  const handleClose = useCallback(
+    (force = false) => {
+      if (isLoading && !force) return;
+      resetForm();
       onClose();
-    }
-  }, [isLoading, onClose]);
+    },
+    [isLoading, onClose, resetForm]
+  );
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
@@ -47,10 +60,7 @@ export default function AddSubjectDialog({ isOpen, onClose, onAdd }: AddSubjectD
 
       try {
         await onAdd(name.trim(), type, color);
-        setName('');
-        setType('HAUPTFACH');
-        setColor('#3b82f6');
-        handleClose();
+        handleClose(true);
       } catch (err) {
         setError(
           err instanceof Error ? err.message : 'Fehler beim Hinzufügen des Fachs'
@@ -62,18 +72,18 @@ export default function AddSubjectDialog({ isOpen, onClose, onAdd }: AddSubjectD
     [name, type, color, onAdd, handleClose]
   );
 
-  if (!isOpen) return null;
+  if (!isOpen || !isMounted) return null;
 
-  return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-      <div className="bg-gradient-to-br from-[#1a1a1a] to-[#0d0d0d] rounded-2xl shadow-2xl p-7 max-w-md w-full border border-white/5 max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-300">
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-sm p-4 grid place-items-center overflow-y-auto modal-backdrop-animate">
+      <div className="w-full max-w-md rounded-2xl shadow-2xl p-8 border border-white/10 bg-[#141414] max-h-[90vh] overflow-y-auto modal-animate my-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-6 animate-in fade-in slide-in-from-top-4 duration-300">
           <h2 className="text-xl sm:text-2xl font-bold text-white">
             Neues Fach
           </h2>
           <button
-            onClick={handleClose}
+            onClick={() => handleClose()}
             disabled={isLoading}
             className="p-2 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-all transform hover:scale-110 active:scale-[0.95] duration-200 disabled:opacity-50"
           >
@@ -81,7 +91,7 @@ export default function AddSubjectDialog({ isOpen, onClose, onAdd }: AddSubjectD
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6 mb-6">
+        <form onSubmit={handleSubmit} className="space-y-6">
           {/* Name Input */}
           <div className="space-y-2 animate-in fade-in slide-in-from-left-4 duration-300 delay-100">
             <label htmlFor="name" className="block text-sm font-medium text-gray-300">
@@ -160,10 +170,10 @@ export default function AddSubjectDialog({ isOpen, onClose, onAdd }: AddSubjectD
           )}
 
           {/* Action Buttons */}
-          <div className="flex gap-3 flex-col sm:flex-row pt-2 animate-in fade-in slide-in-from-bottom-4 duration-300 delay-300">
+          <div className="flex gap-3 flex-col sm:flex-row pt-3 pb-1 animate-in fade-in slide-in-from-bottom-4 duration-300 delay-300">
             <button
               type="button"
-              onClick={handleClose}
+              onClick={() => handleClose()}
               disabled={isLoading}
               className="flex-1 px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-gray-300 font-medium text-base transition-all transform hover:scale-[1.02] active:scale-[0.98] duration-200 disabled:opacity-50"
             >
@@ -179,6 +189,7 @@ export default function AddSubjectDialog({ isOpen, onClose, onAdd }: AddSubjectD
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

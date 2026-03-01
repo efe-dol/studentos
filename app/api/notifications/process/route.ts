@@ -8,12 +8,13 @@ type DueReminderRow = {
   scheduled_for: string;
   user_id: string;
   appointment_id: string;
-  appointments: {
-    id: string;
-    name: string;
-    starts_at: string;
-    description: string | null;
-  }[];
+};
+
+type AppointmentRow = {
+  id: string;
+  name: string;
+  starts_at: string;
+  description: string | null;
 };
 
 const maxBatchSize = 200;
@@ -34,7 +35,7 @@ export async function POST(request: NextRequest) {
 
     const { data: dueReminders, error: remindersError } = await supabase
       .from('appointment_reminders')
-      .select('id, reminder_type, scheduled_for, user_id, appointment_id, appointments(id, name, starts_at, description)')
+      .select('id, reminder_type, scheduled_for, user_id, appointment_id')
       .is('sent_at', null)
       .lte('scheduled_for', new Date().toISOString())
       .order('scheduled_for', { ascending: true })
@@ -49,6 +50,22 @@ export async function POST(request: NextRequest) {
     if (reminders.length === 0) {
       return NextResponse.json({ processed: 0, sent: 0, skipped: 0 }, { status: 200 });
     }
+
+    const appointmentIds = [...new Set(reminders.map((reminder) => reminder.appointment_id))];
+
+    const { data: appointments, error: appointmentsError } = await supabase
+      .from('appointments')
+      .select('id, name, starts_at, description')
+      .in('id', appointmentIds);
+
+    if (appointmentsError) {
+      return NextResponse.json({ error: appointmentsError.message }, { status: 500 });
+    }
+
+    const appointmentsById = new Map<string, AppointmentRow>();
+    (appointments || []).forEach((appointment) => {
+      appointmentsById.set(appointment.id, appointment as AppointmentRow);
+    });
 
     const userIds = [...new Set(reminders.map((reminder) => reminder.user_id))];
 
@@ -74,7 +91,7 @@ export async function POST(request: NextRequest) {
     const invalidSubscriptionIds: string[] = [];
 
     for (const reminder of reminders) {
-      const appointment = reminder.appointments?.[0];
+      const appointment = appointmentsById.get(reminder.appointment_id);
 
       if (!appointment) {
         skippedCount += 1;

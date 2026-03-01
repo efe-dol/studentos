@@ -1,22 +1,22 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useSubjects, useGrades, Subject } from '@/lib/grades/hooks';
+import { useEffect, useRef, useState } from 'react';
+import { useSubjects, useGrades } from '@/lib/grades/hooks';
 import {
   calculateOverallAverage,
   calculateSubjectAverage,
   formatGrade,
   getGradeLabel,
 } from '@/lib/grades/calculator';
-import AddGradeDialog from './AddGradeDialog';
+import type { AddGradeData } from './AddGradeDialog';
 import SubjectDetail from './SubjectDetail';
-import { Plus, BookOpen, RotateCw, AlertCircle } from 'lucide-react';
+import { BookOpen, RotateCw, AlertCircle } from 'lucide-react';
 
 export default function GradesTab() {
   const [selectedSubjectId, setSelectedSubjectId] = useState<string | null>(null);
-  const [showAddGradeDialog, setShowAddGradeDialog] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const transitionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const {
     subjects,
@@ -39,6 +39,14 @@ export default function GradesTab() {
     fetchGrades();
   }, [fetchSubjects, fetchGrades]);
 
+  useEffect(() => {
+    return () => {
+      if (transitionTimeoutRef.current) {
+        clearTimeout(transitionTimeoutRef.current);
+      }
+    };
+  }, []);
+
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
@@ -48,7 +56,7 @@ export default function GradesTab() {
     }
   };
 
-  const handleAddGrade = async (gradeData: any) => {
+  const handleAddGrade = async (gradeData: AddGradeData) => {
     if (!selectedSubjectId) return;
     await addGrade(
       selectedSubjectId,
@@ -61,18 +69,29 @@ export default function GradesTab() {
   };
 
   const handleSelectSubject = (subjectId: string) => {
+    if (isTransitioning) return;
     setIsTransitioning(true);
-    setTimeout(() => {
+    if (transitionTimeoutRef.current) {
+      clearTimeout(transitionTimeoutRef.current);
+    }
+    transitionTimeoutRef.current = setTimeout(() => {
       setSelectedSubjectId(subjectId);
       setIsTransitioning(false);
-    }, 150);
+      transitionTimeoutRef.current = null;
+    }, 180);
   };
 
   const handleBack = () => {
+    if (isTransitioning) return;
     setIsTransitioning(true);
-    setTimeout(() => {
+    if (transitionTimeoutRef.current) {
+      clearTimeout(transitionTimeoutRef.current);
+    }
+    transitionTimeoutRef.current = setTimeout(() => {
       setSelectedSubjectId(null);
-    }, 150);
+      setIsTransitioning(false);
+      transitionTimeoutRef.current = null;
+    }, 180);
   };
 
   const hauptfaecher = subjects.filter(s => s.type === 'HAUPTFACH');
@@ -87,7 +106,7 @@ export default function GradesTab() {
 
   if (selectedSubject) {
     return (
-      <div className={`transition-all duration-300 ${isTransitioning ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}`}>
+      <div className={`transition-all duration-300 ${isTransitioning ? 'opacity-0 translate-x-4 scale-[0.98]' : 'opacity-100 translate-x-0 scale-100'}`}>
         <SubjectDetail
           subject={selectedSubject}
           grades={grades}
@@ -103,7 +122,7 @@ export default function GradesTab() {
   const hasError = subjectsError || gradesError;
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-300">
+    <div className={`space-y-6 animate-in fade-in duration-300 transition-all ${isTransitioning ? 'opacity-0 -translate-x-4 scale-[0.98] pointer-events-none' : 'opacity-100 translate-x-0 scale-100'}`}>
       {/* Header */}
       <div className="flex items-center justify-between gap-3 animate-in slide-in-from-top-2 duration-300">
         <div className="flex items-center gap-4 flex-1">
@@ -186,6 +205,7 @@ export default function GradesTab() {
                       key={subject.id}
                       onClick={() => handleSelectSubject(subject.id)}
                       className="p-4 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-lg text-left transition-all group animate-in slide-in-from-left duration-300 hover:scale-[1.02] transform"
+                      disabled={isTransitioning}
                       style={{ animationDelay: `${150 + idx * 75}ms` }}
                     >
                       <div className="flex items-start justify-between gap-3 mb-3">
@@ -242,6 +262,7 @@ export default function GradesTab() {
                       key={subject.id}
                       onClick={() => handleSelectSubject(subject.id)}
                       className="p-4 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-lg text-left transition-all group animate-in slide-in-from-left duration-300 hover:scale-[1.02] transform"
+                      disabled={isTransitioning}
                       style={{ animationDelay: `${200 + (hauptfaecher.length + idx) * 75}ms` }}
                     >
                       <div className="flex items-start justify-between gap-3 mb-3">
@@ -285,15 +306,6 @@ export default function GradesTab() {
         </div>
       )}
 
-      {/* Add Grade Dialog */}
-      {selectedSubjectId && (
-        <AddGradeDialog
-          isOpen={showAddGradeDialog}
-          subjectId={selectedSubjectId}
-          onClose={() => setShowAddGradeDialog(false)}
-          onAdd={handleAddGrade}
-        />
-      )}
     </div>
   );
 }

@@ -47,11 +47,28 @@ type Appointment = {
   created_at: string;
 };
 
+type GradeEntry = {
+  id: string;
+  grade: number;
+  grade_type: 'SCHULAUFGABE' | 'MÜNDLICH' | 'KURZARBEIT' | 'KSL';
+  weight: number;
+};
+
+const GRADE_BUCKETS = [
+  { key: 1, label: '1', color: '#dbeafe' },
+  { key: 2, label: '2', color: '#93c5fd' },
+  { key: 3, label: '3', color: '#60a5fa' },
+  { key: 4, label: '4', color: '#3b82f6' },
+  { key: 5, label: '5', color: '#2563eb' },
+  { key: 6, label: '6', color: '#1e40af' },
+] as const;
+
 export default function Dashboard() {
   const FIXED_SCHOOL_NAME = 'Gymnasium Weilheim i.OB';
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [todos, setTodos] = useState<Todo[]>([]);
+  const [grades, setGrades] = useState<GradeEntry[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
   const [maintenanceMessages, setMaintenanceMessages] = useState<MaintenanceMessage[]>([]);
@@ -445,6 +462,17 @@ export default function Dashboard() {
           console.error('Error fetching maintenance messages:', error);
         }
 
+        // Fetch grades for dashboard performance widget
+        try {
+          const response = await fetch('/api/grades');
+          if (response.ok) {
+            const data = await response.json();
+            setGrades(Array.isArray(data) ? data : []);
+          }
+        } catch (error) {
+          console.error('Error fetching grades:', error);
+        }
+
         
         setLoading(false);
       } catch (error) {
@@ -497,6 +525,62 @@ export default function Dashboard() {
   const upcomingAppointments = appointments
     .filter((appointment) => new Date(appointment.starts_at).getTime() >= Date.now())
     .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime());
+
+  const gradeCount = grades.length;
+  const weightedAverage =
+    gradeCount === 0
+      ? null
+      : grades.reduce((sum, grade) => sum + grade.grade * (grade.weight || 1), 0) /
+        grades.reduce((sum, grade) => sum + (grade.weight || 1), 0);
+  const averageLabel =
+    weightedAverage === null
+      ? '—'
+      : weightedAverage <= 2
+      ? 'Sehr gut'
+      : weightedAverage <= 3
+      ? 'Gut'
+      : weightedAverage <= 4
+      ? 'Befriedigend'
+      : weightedAverage <= 5
+      ? 'Ausreichend'
+      : 'Verbesserbar';
+
+  const gradeBucketCounts = GRADE_BUCKETS.map((bucket) => {
+    const count = grades.filter((grade) => Math.min(6, Math.max(1, Math.round(grade.grade))) === bucket.key).length;
+    return { ...bucket, count };
+  });
+
+  const gradeBucketStats = gradeBucketCounts.map((bucket) => ({
+    ...bucket,
+    percentage: gradeCount === 0 ? 0 : Math.round((bucket.count / gradeCount) * 100),
+  }));
+
+  const dominantBucket =
+    gradeCount === 0
+      ? null
+      : gradeBucketStats.reduce((max, bucket) => (bucket.count > max.count ? bucket : max), gradeBucketStats[0]);
+
+  const donutRadius = 56;
+  const donutStroke = 16;
+  const donutCircumference = 2 * Math.PI * donutRadius;
+  const donutSegments = (() => {
+    if (gradeCount === 0) return [] as Array<{ key: number; color: string; dashArray: string; dashOffset: number }>;
+
+    let cumulative = 0;
+    return gradeBucketCounts
+      .filter((bucket) => bucket.count > 0)
+      .map((bucket) => {
+        const segmentLength = (bucket.count / gradeCount) * donutCircumference;
+        const segment = {
+          key: bucket.key,
+          color: bucket.color,
+          dashArray: `${segmentLength} ${donutCircumference - segmentLength}`,
+          dashOffset: -cumulative,
+        };
+        cumulative += segmentLength;
+        return segment;
+      });
+  })();
 
   const previewAppointments = upcomingAppointments.slice(0, 5);
 
@@ -618,19 +702,83 @@ export default function Dashboard() {
             {/* Notendurchschnitt */}
             <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-6 card-stagger-3">
               <h2 className="text-xl font-semibold mb-4 flex items-center gap-2"><BarChart3 className="w-5 h-5" /> Leistungen</h2>
-              <div className="space-y-3">
-                <div>
-                  <div className="flex justify-between mb-2">
-                    <span className="text-sm">Notendurchschnitt</span>
-                    <span className="font-semibold">2.3</span>
-                  </div>
-                  <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
-                    <div className="h-full w-3/4 bg-gradient-to-r from-green-400 to-blue-400"></div>
-                  </div>
-                </div>
+              <div className="space-y-4">
                 <div className="p-3 rounded-lg bg-white/5 border border-white/10 text-sm">
-                  <p className="text-gray-400">Letzter Test</p>
-                  <p className="text-lg font-semibold mt-1">Mathematik: 1.8</p>
+                  <div className="flex justify-between items-center mb-1">
+                    <p className="text-gray-400">Notendurchschnitt</p>
+                    <span className="font-semibold text-lg">{weightedAverage === null ? '—' : weightedAverage.toFixed(1)}</span>
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    {gradeCount === 0 ? 'Noch keine Noten vorhanden' : `${gradeCount} Note${gradeCount !== 1 ? 'n' : ''} • ${averageLabel}`}
+                  </p>
+                </div>
+
+                <div className="p-3 rounded-lg bg-white/5 border border-white/10">
+                  <p className="text-sm text-gray-400 mb-3">Notenverteilung</p>
+                  {gradeCount === 0 ? (
+                    <p className="text-sm text-gray-500">Keine Daten für das Kreisdiagramm</p>
+                  ) : (
+                    <div className="flex items-center gap-4">
+                      <div className="relative w-36 h-36 flex-shrink-0 grid place-items-center">
+                        <div className="absolute inset-0 rounded-full bg-gradient-to-br from-cyan-400/20 via-blue-500/20 to-indigo-500/20 blur-md"></div>
+                        <svg viewBox="0 0 140 140" className="w-full h-full -rotate-90 relative z-10">
+                          <circle
+                            cx="70"
+                            cy="70"
+                            r={donutRadius}
+                            fill="none"
+                            stroke="rgba(255,255,255,0.12)"
+                            strokeWidth={donutStroke}
+                          />
+                          {donutSegments.map((segment) => (
+                            <circle
+                              key={segment.key}
+                              cx="70"
+                              cy="70"
+                              r={donutRadius}
+                              fill="none"
+                              stroke={segment.color}
+                              strokeWidth={donutStroke}
+                              strokeDasharray={segment.dashArray}
+                              strokeDashoffset={segment.dashOffset}
+                              strokeLinecap="round"
+                            />
+                          ))}
+                        </svg>
+                        <div className="absolute inset-4 rounded-full bg-[#111111]/90 border border-white/10 flex flex-col items-center justify-center text-center z-20 shadow-inner shadow-black/40">
+                          <span className="text-2xl font-semibold text-white">{weightedAverage?.toFixed(1) ?? '—'}</span>
+                          <span className="text-[11px] text-gray-400">Ø Schnitt</span>
+                        </div>
+                      </div>
+
+                      <div className="flex-1 space-y-2">
+                        {gradeBucketStats.map((bucket) => (
+                          <div key={bucket.key} className="space-y-1">
+                            <div className="flex items-center justify-between text-xs">
+                              <div className="flex items-center gap-2">
+                                <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: bucket.color }}></span>
+                                <span className="text-gray-300">Note {bucket.label}</span>
+                              </div>
+                              <span className="text-gray-400">{bucket.count} • {bucket.percentage}%</span>
+                            </div>
+                            <div className="h-1.5 w-full rounded-full bg-white/10 overflow-hidden">
+                              <div
+                                className="h-full rounded-full transition-all duration-500"
+                                style={{
+                                  width: `${bucket.percentage}%`,
+                                  backgroundColor: bucket.color,
+                                }}
+                              ></div>
+                            </div>
+                          </div>
+                        ))}
+
+                        <p className="text-[11px] text-gray-500 pt-1">
+                          Häufigste Note: {dominantBucket ? `${dominantBucket.label} (${dominantBucket.count})` : '—'}
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

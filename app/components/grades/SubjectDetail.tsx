@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
 import { Subject, Grade } from '@/lib/grades/hooks';
+import type { AddGradeData } from './AddGradeDialog';
 import {
   calculateSubjectAverage,
   calculateKLAverage,
@@ -16,7 +17,7 @@ interface SubjectDetailProps {
   subject: Subject;
   grades: Grade[];
   onBack: () => void;
-  onAddGrade: (gradeData: any) => Promise<void>;
+  onAddGrade: (gradeData: AddGradeData) => Promise<void>;
   onDeleteGrade: (gradeId: string) => Promise<void>;
   isLoading?: boolean;
 }
@@ -31,13 +32,9 @@ export default function SubjectDetail({
 }: SubjectDetailProps) {
   const [showAddGradeDialog, setShowAddGradeDialog] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [isBackTransitioning, setIsBackTransitioning] = useState(false);
 
   const handleBackClick = () => {
-    setIsBackTransitioning(true);
-    setTimeout(() => {
-      onBack();
-    }, 200);
+    onBack();
   };
 
   const subjectGrades = grades.filter(g => g.subject_id === subject.id);
@@ -77,7 +74,7 @@ export default function SubjectDetail({
   };
 
   return (
-    <div className={`space-y-6 transition-all duration-300 ${isBackTransitioning ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+    <div className="space-y-6 transition-all duration-300">
       {/* Header */}
       <div className="flex items-center justify-between gap-4 animate-in slide-in-from-left duration-300 delay-75">
         <button
@@ -213,7 +210,6 @@ export default function SubjectDetail({
         subjectId={subject.id}
         onClose={() => setShowAddGradeDialog(false)}
         onAdd={onAddGrade}
-        isLoading={isLoading}
       />
     </div>
   );

@@ -1,13 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Plus, Edit2, Trash2, BookOpen, AlertCircle, RotateCw } from 'lucide-react';
-import { useSubjects } from '@/lib/grades/hooks';
+import { useSubjects, type Subject } from '@/lib/grades/hooks';
 import AddSubjectDialog from './AddSubjectDialog';
-
-interface SubjectListSettingsProps {
-  onClose?: () => void;
-}
 
 interface EditState {
   isOpen: boolean;
@@ -24,15 +21,21 @@ const COLOR_PRESETS = [
   '#6366f1', '#8b5cf6', '#ec4899', '#818cf8', '#a78bfa', '#f472b6',
 ];
 
-export default function SubjectListSettings({ onClose }: SubjectListSettingsProps) {
+export default function SubjectListSettings() {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [editState, setEditState] = useState<EditState>({ isOpen: false, name: '', type: 'HAUPTFACH', color: '#3b82f6' });
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const { subjects, loading, error, fetchSubjects, updateSubject, deleteSubject } = useSubjects();
+  const { subjects, loading, error, fetchSubjects, addSubject, updateSubject, deleteSubject } = useSubjects();
+
+  useEffect(() => {
+    setIsMounted(true);
+    return () => setIsMounted(false);
+  }, []);
 
   useEffect(() => {
     fetchSubjects();
@@ -47,7 +50,7 @@ export default function SubjectListSettings({ onClose }: SubjectListSettingsProp
     }
   };
 
-  const handleEditSubject = (subject: any) => {
+  const handleEditSubject = (subject: Subject) => {
     setEditState({
       isOpen: true,
       id: subject.id,
@@ -66,7 +69,7 @@ export default function SubjectListSettings({ onClose }: SubjectListSettingsProp
         name: editState.name,
         type: editState.type,
         color: editState.color,
-      } as any);
+      });
       setEditState({ isOpen: false, name: '', type: 'HAUPTFACH', color: '#3b82f6' });
     } finally {
       setIsSaving(false);
@@ -242,19 +245,8 @@ export default function SubjectListSettings({ onClose }: SubjectListSettingsProp
         isOpen={showAddDialog}
         onClose={() => setShowAddDialog(false)}
         onAdd={async (name, type, color) => {
-          await (subjects.length === 0 ? 
-            fetch('/api/subjects', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ name, type, color }),
-            }).then(() => fetchSubjects())
-            :
-            fetch('/api/subjects', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ name, type, color }),
-            }).then(() => fetchSubjects())
-          );
+          await addSubject(name, type, color);
+          await fetchSubjects();
         }}
       />
 
@@ -349,17 +341,23 @@ export default function SubjectListSettings({ onClose }: SubjectListSettingsProp
       )}
 
       {/* Delete Confirmation */}
-      {deleteConfirmId && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-          <div className="bg-gradient-to-br from-[#1a1a1a] to-[#0d0d0d] rounded-2xl shadow-2xl p-7 max-w-sm w-full border border-white/5 animate-in fade-in zoom-in-95 duration-300">
-            <h2 className="text-xl sm:text-2xl font-bold text-white mb-3 animate-in fade-in slide-in-from-top-4 duration-300">
+      {deleteConfirmId && isMounted && createPortal(
+        <div
+          className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-sm p-4 grid place-items-center overflow-y-auto modal-backdrop-animate"
+          onClick={() => !isDeleting && setDeleteConfirmId(null)}
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl shadow-2xl p-8 border border-white/10 bg-[#141414] modal-animate my-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-xl sm:text-2xl font-bold text-white mb-3 modal-field-1">
               Fach löschen?
             </h2>
-            <p className="text-sm sm:text-base text-gray-400 mb-6 animate-in fade-in slide-in-from-left-4 duration-300 delay-100">
+            <p className="text-sm sm:text-base text-gray-400 mb-6 modal-field-2">
               Dadurch werden auch alle zugehörigen Noten gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.
             </p>
 
-            <div className="flex gap-3 flex-col sm:flex-row animate-in fade-in slide-in-from-bottom-4 duration-300 delay-200">
+            <div className="flex gap-3 flex-col sm:flex-row modal-buttons-animate">
               <button
                 onClick={() => setDeleteConfirmId(null)}
                 className="flex-1 px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-gray-300 font-medium text-base transition-all transform hover:scale-[1.02] active:scale-[0.98] duration-200"
@@ -376,7 +374,8 @@ export default function SubjectListSettings({ onClose }: SubjectListSettingsProp
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

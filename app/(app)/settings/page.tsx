@@ -1,11 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import AuthBackground from '@/app/components/common/AuthBackground';
 import LoadingScreen from '@/app/components/common/LoadingScreen';
 import Toast from '@/app/components/common/Toast';
+import SubjectListSettings from '@/app/components/grades/SubjectListSettings';
 import {
   ArrowLeft,
   Bell,
@@ -30,12 +31,22 @@ type User = {
   email?: string;
 };
 
+const extractFirstName = (value?: string) => {
+  return String(value || '').trim().split(/\s+/)[0] || '';
+};
+
+const toDisplayName = (value?: string) => {
+  const firstName = extractFirstName(value);
+  if (!firstName) return '';
+  return firstName.charAt(0).toUpperCase() + firstName.slice(1).toLowerCase();
+};
+
 export default function SettingsPage() {
   const FIXED_SCHOOL_NAME = 'Gymnasium Weilheim i.OB';
   const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
+  const [, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'profile' | 'notifications'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'notifications' | 'subjects'>('profile');
   const [savingProfile, setSavingProfile] = useState(false);
   const [pushSupported, setPushSupported] = useState(false);
   const [pushSubscribed, setPushSubscribed] = useState(false);
@@ -49,20 +60,9 @@ export default function SettingsPage() {
   const [editLastName, setEditLastName] = useState('');
   const [editClassName, setEditClassName] = useState('');
   const [editBirthdate, setEditBirthdate] = useState('');
-  const [editSchool, setEditSchool] = useState('');
 
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const router = useRouter();
-
-  const extractFirstName = (value?: string) => {
-    return String(value || '').trim().split(/\s+/)[0] || '';
-  };
-
-  const toDisplayName = (value?: string) => {
-    const firstName = extractFirstName(value);
-    if (!firstName) return '';
-    return firstName.charAt(0).toUpperCase() + firstName.slice(1).toLowerCase();
-  };
 
   const handleSaveProfile = async () => {
     if (!user) {
@@ -102,7 +102,6 @@ export default function SettingsPage() {
       setEditLastName(normalizedSavedProfile.last_name || '');
       setEditClassName(normalizedSavedProfile.class_name || '');
       setEditBirthdate(normalizedSavedProfile.birthdate || '');
-      setEditSchool(FIXED_SCHOOL_NAME);
       setToast({ message: 'Profil aktualisiert!', type: 'success' });
     }
 
@@ -123,7 +122,7 @@ export default function SettingsPage() {
   };
 
   const initializePushState = async () => {
-    if (typeof window === 'undefined' || !('serviceWorker' in navigator) || !('PushManager' in window)) {
+    if (typeof window === 'undefined' || !('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) {
       setPushSupported(false);
       return;
     }
@@ -214,11 +213,16 @@ export default function SettingsPage() {
 
       const endpoint = subscriptionEndpoint || subscription.endpoint;
 
-      await fetch('/api/push-subscriptions', {
+      const response = await fetch('/api/push-subscriptions', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ endpoint }),
       });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Fehler beim Deaktivieren von Push');
+      }
 
       await subscription.unsubscribe();
       setPushSubscribed(false);
@@ -276,7 +280,6 @@ export default function SettingsPage() {
           setEditLastName(profileData.last_name || '');
           setEditClassName(profileData.class_name || '');
           setEditBirthdate(profileData.birthdate || '');
-          setEditSchool(FIXED_SCHOOL_NAME);
         }
 
         setLoading(false);
@@ -287,7 +290,7 @@ export default function SettingsPage() {
     };
 
     getSession();
-  }, []);
+  }, [router, supabase]);
 
   useEffect(() => {
     initializePushState();
@@ -298,32 +301,28 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="fixed inset-0 bg-gradient-to-b from-[#0a0a0a] via-[#121212] to-[#1a1a1a] text-white flex flex-col animate-in fade-in duration-300">
+    <div className="min-h-screen bg-gradient-to-b from-[#0a0a0a] via-[#121212] to-[#1a1a1a] text-white">
       <AuthBackground />
 
-      {/* Header */}
-      <div className="relative z-10 border-b border-white/10 backdrop-blur-xl bg-white/5 animate-in fade-in slide-in-from-top-2 duration-500">
-        <div className="max-w-4xl mx-auto px-6 py-4 flex items-center gap-4">
+      <div className="relative z-10 max-w-5xl mx-auto px-6 py-8">
+        {/* Header */}
+        <div className="flex items-center gap-4 mb-8 card-stagger-1">
           <button
             onClick={() => router.push('/dashboard')}
-            className="p-2 rounded-lg hover:bg-white/10 transition-all border border-white/10 hover:scale-105 duration-200"
+            className="p-2 rounded-lg hover:bg-white/10 transition-all border border-white/10 hover:scale-105"
           >
-            <ArrowLeft className="w-5 h-5 animate-in fade-in duration-500" />
+            <ArrowLeft className="w-5 h-5" />
           </button>
-          <h1 className="text-3xl font-semibold animate-in fade-in slide-in-from-left-4 duration-500 delay-100">Einstellungen</h1>
+          <h1 className="text-4xl font-bold">Einstellungen</h1>
         </div>
-      </div>
 
-      {/* Main Content */}
-      <div className="flex-1 overflow-y-auto z-10">
-        <div className="max-w-4xl mx-auto px-6 py-8 pb-24">
           {/* Tab Navigation */}
-          <div className="flex gap-3 mb-8 flex-wrap animate-in fade-in slide-in-from-top-4 duration-500 delay-200">
+          <div className="flex gap-3 mb-8 flex-wrap card-stagger-2">
             <button
               onClick={() => setActiveTab('profile')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all border transform hover:scale-105 duration-200 ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all border hover:scale-105 ${
                 activeTab === 'profile'
-                  ? 'bg-gradient-to-r from-blue-500/40 to-purple-500/40 border-blue-400/50 text-white shadow-lg shadow-blue-500/20 animate-in zoom-in-95 duration-300'
+                  ? 'bg-gradient-to-r from-blue-500/40 to-purple-500/40 border-blue-400/50 text-white shadow-lg shadow-blue-500/20'
                   : 'bg-white/5 border-white/10 hover:bg-white/10 text-gray-300'
               }`}
             >
@@ -331,17 +330,21 @@ export default function SettingsPage() {
               Profil
             </button>
             <button
-              onClick={() => router.push('/subjects')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all border transform hover:scale-105 duration-200 bg-white/5 border-white/10 hover:bg-white/10 text-gray-300`}
+              onClick={() => setActiveTab('subjects')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all border hover:scale-105 ${
+                activeTab === 'subjects'
+                  ? 'bg-gradient-to-r from-blue-500/40 to-purple-500/40 border-blue-400/50 text-white shadow-lg shadow-blue-500/20'
+                  : 'bg-white/5 border-white/10 hover:bg-white/10 text-gray-300'
+              }`}
             >
               <BookOpen className="w-4 h-4" />
               Fächer
             </button>
             <button
               onClick={() => setActiveTab('notifications')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all border transform hover:scale-105 duration-200 ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all border hover:scale-105 ${
                 activeTab === 'notifications'
-                  ? 'bg-gradient-to-r from-blue-500/40 to-purple-500/40 border-blue-400/50 text-white shadow-lg shadow-blue-500/20 animate-in zoom-in-95 duration-300'
+                  ? 'bg-gradient-to-r from-blue-500/40 to-purple-500/40 border-blue-400/50 text-white shadow-lg shadow-blue-500/20'
                   : 'bg-white/5 border-white/10 hover:bg-white/10 text-gray-300'
               }`}
             >
@@ -352,14 +355,14 @@ export default function SettingsPage() {
 
           {/* Profile Tab */}
           {activeTab === 'profile' && (
-            <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-400">
-              <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-8 animate-in zoom-in-95 duration-500 delay-100">
-                <h2 className="text-2xl font-semibold mb-6 flex items-center gap-2 animate-in fade-in slide-in-from-left-4 duration-500">
+            <div className="space-y-6 card-stagger-3">
+              <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-8 content-fade-in">
+                <h2 className="text-2xl font-semibold mb-6 flex items-center gap-2">
                   <User className="w-6 h-6" />
                   Profilinformationen
                 </h2>
                 <div className="space-y-4">
-                    <div className="field animate-in fade-in slide-in-from-left-4 duration-500 delay-350">
+                    <div className="field modal-field-1">
                     <input
                       className="focus-glow px-4 py-3 rounded-xl text-white placeholder-transparent w-full bg-white/5 border border-white/10 transform transition-all hover:scale-[1.01] duration-200"
                       type="text"
@@ -370,7 +373,7 @@ export default function SettingsPage() {
                     <label>Vorname</label>
                   </div>
 
-                    <div className="field animate-in fade-in slide-in-from-left-4 duration-500 delay-400">
+                    <div className="field modal-field-2">
                     <input
                       className="focus-glow px-4 py-3 rounded-xl text-white placeholder-transparent w-full bg-white/5 border border-white/10 transform transition-all hover:scale-[1.01] duration-200"
                       type="text"
@@ -381,7 +384,7 @@ export default function SettingsPage() {
                     <label>Nachname</label>
                   </div>
 
-                    <div className="field animate-in fade-in slide-in-from-left-4 duration-500 delay-450">
+                    <div className="field modal-field-3">
                     <input
                       className="focus-glow px-4 py-3 rounded-xl text-white placeholder-transparent w-full bg-white/5 border border-white/10 transform transition-all hover:scale-[1.01] duration-200"
                       type="text"
@@ -392,7 +395,7 @@ export default function SettingsPage() {
                     <label>Klasse</label>
                   </div>
 
-                    <div className="field animate-in fade-in slide-in-from-left-4 duration-500 delay-500">
+                    <div className="field modal-field-4">
                     <input
                       className="focus-glow px-4 py-3 rounded-xl text-white placeholder-transparent w-full bg-white/5 border border-white/10 transform transition-all hover:scale-[1.01] duration-200"
                       type="date"
@@ -403,7 +406,7 @@ export default function SettingsPage() {
                     <label>Geburtstag</label>
                   </div>
 
-                    <div className="field animate-in fade-in slide-in-from-left-4 duration-500 delay-550">
+                    <div className="field modal-field-5">
                     <input
                       className="focus-glow px-4 py-3 rounded-xl text-white placeholder-transparent w-full bg-white/5 border border-white/10"
                       type="text"
@@ -414,7 +417,7 @@ export default function SettingsPage() {
                     <label>Schule</label>
                   </div>
 
-                    <div className="field animate-in fade-in slide-in-from-left-4 duration-500 delay-600">
+                    <div className="field modal-field-5">
                     <input
                       className="focus-glow px-4 py-3 rounded-xl text-white placeholder-transparent w-full bg-white/5 border border-white/10"
                       type="email"
@@ -426,7 +429,7 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
-                  <div className="flex gap-3 mt-8 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-700">
+                  <div className="flex gap-3 mt-8 modal-buttons-animate">
                   <button
                     onClick={handleSaveProfile}
                     disabled={savingProfile}
@@ -439,24 +442,33 @@ export default function SettingsPage() {
             </div>
           )}
 
+          {/* Subjects Tab */}
+          {activeTab === 'subjects' && (
+            <div className="space-y-6 card-stagger-3">
+              <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-8 content-fade-in">
+                <SubjectListSettings />
+              </div>
+            </div>
+          )}
+
           {/* Notifications Tab */}
           {activeTab === 'notifications' && (
-            <div className="space-y-6 animate-in fade-in duration-500 delay-200">
-              <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-8 animate-in fade-in zoom-in-95 duration-500 delay-250">
-                <h2 className="text-2xl font-semibold mb-6 flex items-center gap-2 animate-in fade-in slide-in-from-left-4 duration-500 delay-300">
+            <div className="space-y-6 card-stagger-3">
+              <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-8 content-fade-in">
+                <h2 className="text-2xl font-semibold mb-6 flex items-center gap-2">
                   <Bell className="w-6 h-6" />
                   Benachrichtigungen
                 </h2>
 
                 {!pushSupported ? (
-                  <div className="p-4 rounded-lg bg-yellow-500/10 border border-yellow-500/20 animate-in fade-in slide-in-from-left-4 duration-500 delay-350">
+                  <div className="p-4 rounded-lg bg-yellow-500/10 border border-yellow-500/20 content-fade-in">
                     <p className="text-yellow-300 text-sm">
                       Push-Benachrichtigungen werden von deinem Browser oder Gerät nicht unterstützt.
                     </p>
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    <div className="flex items-center justify-between p-4 rounded-lg bg-white/5 border border-white/10 animate-in fade-in slide-in-from-left-4 duration-500 delay-350 transform transition-all hover:bg-white/10 hover:scale-[1.01]">
+                    <div className="flex items-center justify-between p-4 rounded-lg bg-white/5 border border-white/10 content-fade-in transform transition-all hover:bg-white/10 hover:scale-[1.01]">
                       <div>
                         <h3 className="font-medium text-white">Push-Benachrichtigungen</h3>
                         <p className="text-sm text-gray-400 mt-1">
@@ -477,19 +489,19 @@ export default function SettingsPage() {
                         ) : pushSubscribed ? (
                           <>
                             <BellOff className="w-4 h-4" />
-                            Aktivieren
+                            Deaktivieren
                           </>
                         ) : (
                           <>
                             <Bell className="w-4 h-4" />
-                            Deaktivieren
+                            Aktivieren
                           </>
                         )}
                       </button>
                     </div>
 
                     {pushSubscribed && (
-                      <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/20 animate-in fade-in zoom-in-95 duration-500 delay-400">
+                      <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/20 content-fade-in">
                         <p className="text-green-300 text-sm flex items-center gap-2">
                           <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
                           Push-Benachrichtigungen sind aktiviert
@@ -498,7 +510,7 @@ export default function SettingsPage() {
                     )}
 
                     {!pushSubscribed && (
-                      <div className="p-4 rounded-lg bg-gray-500/10 border border-gray-500/20 animate-in fade-in zoom-in-95 duration-500 delay-400">
+                      <div className="p-4 rounded-lg bg-gray-500/10 border border-gray-500/20 content-fade-in">
                         <p className="text-gray-300 text-sm flex items-center gap-2">
                           <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
                           Push-Benachrichtigungen sind deaktiviert
@@ -512,11 +524,11 @@ export default function SettingsPage() {
           )}
 
           {/* Admin & Account Section */}
-          <div className="mt-8 space-y-4 border-t border-white/10 pt-8 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-500">
+          <div className="mt-8 space-y-4 border-t border-white/10 pt-8 card-stagger-4">
             {isAdmin && (
               <button
                 onClick={() => router.push('/admin')}
-                className="w-full flex items-center justify-between p-4 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 transition-all group transform hover:scale-[1.02] active:scale-[0.98] duration-200 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-550"
+                className="w-full flex items-center justify-between p-4 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 transition-all group transform hover:scale-[1.02] active:scale-[0.98] duration-200"
               >
                 <div className="flex items-center gap-3 text-left">
                   <Shield className="w-5 h-5 text-blue-400 group-hover:scale-110 transition-transform" />
@@ -531,7 +543,7 @@ export default function SettingsPage() {
 
             <button
               onClick={handleSignOut}
-              className="w-full flex items-center justify-between p-4 rounded-lg bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 transition-all group transform hover:scale-[1.02] active:scale-[0.98] duration-200 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-600"
+              className="w-full flex items-center justify-between p-4 rounded-lg bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 transition-all group transform hover:scale-[1.02] active:scale-[0.98] duration-200"
             >
               <div className="flex items-center gap-3 text-left">
                 <LogOut className="w-5 h-5 text-red-400 group-hover:scale-110 transition-transform" />
@@ -543,18 +555,15 @@ export default function SettingsPage() {
               <span className="text-gray-400 group-hover:text-white transition-colors">→</span>
             </button>
           </div>
-        </div>
       </div>
 
       {/* Toast Notification */}
       {toast && (
-        <div className="animate-in fade-in slide-in-from-bottom-4 duration-300">
-          <Toast
-            message={toast.message}
-            type={toast.type}
-            onClose={() => setToast(null)}
-          />
-        </div>
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
       )}
     </div>
   );
