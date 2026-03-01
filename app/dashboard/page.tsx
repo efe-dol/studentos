@@ -138,14 +138,21 @@ export default function Dashboard() {
         }),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error('Fehler beim Speichern');
+        console.error('Save error response:', data);
+        throw new Error(data.error || `HTTP ${response.status}: Fehler beim Speichern`);
       }
 
       setShowElternportalSettings(false);
+      setElternportalEmail('');
+      setElternportalPassword('');
       setToast({ message: 'Elternportal-Zugangsdaten gespeichert!', type: 'success' });
     } catch (error) {
-      setToast({ message: 'Fehler beim Speichern der Zugangsdaten', type: 'error' });
+      console.error('Save Elternportal Error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Fehler beim Speichern der Zugangsdaten';
+      setToast({ message: errorMessage, type: 'error' });
     } finally {
       setSavingElternportal(false);
     }
