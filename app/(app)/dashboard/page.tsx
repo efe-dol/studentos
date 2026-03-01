@@ -1,11 +1,10 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { createClient } from '@/utils/supabase/client';
+import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
-import AuthBackground from '@/app/components/AuthBackground';
-import Toast from '@/app/components/Toast';
-import { SubstitutionsView } from '@/app/components/SubstitutionsView';
-import { Settings, CheckSquare, BookOpen, BarChart3, Calendar, Zap, Edit, RefreshCw } from 'lucide-react';
+import AuthBackground from '@/app/components/common/AuthBackground';
+import Toast from '@/app/components/common/Toast';
+import { Settings, CheckSquare, BookOpen, BarChart3, Calendar, Zap, Edit } from 'lucide-react';
 
 type User = {
   id: string;
@@ -33,10 +32,6 @@ export default function Dashboard() {
   const [editBirthdate, setEditBirthdate] = useState('');
   const [editSchool, setEditSchool] = useState('');
   const [savingProfile, setSavingProfile] = useState(false);
-  const [showElternportalSettings, setShowElternportalSettings] = useState(false);
-  const [elternportalEmail, setElternportalEmail] = useState('');
-  const [elternportalPassword, setElternportalPassword] = useState('');
-  const [savingElternportal, setSavingElternportal] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const supabase = createClient();
   const router = useRouter();
@@ -119,43 +114,6 @@ export default function Dashboard() {
     }
 
     setSavingProfile(false);
-  };
-
-  const handleSaveElternportalCredentials = async () => {
-    if (!elternportalEmail || !elternportalPassword) {
-      setToast({ message: 'Bitte alle Felder ausfüllen!', type: 'error' });
-      return;
-    }
-
-    setSavingElternportal(true);
-    try {
-      const response = await fetch('/api/save-elternportal', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: elternportalEmail,
-          password: elternportalPassword,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        console.error('Save error response:', data);
-        throw new Error(data.error || `HTTP ${response.status}: Fehler beim Speichern`);
-      }
-
-      setShowElternportalSettings(false);
-      setElternportalEmail('');
-      setElternportalPassword('');
-      setToast({ message: 'Elternportal-Zugangsdaten gespeichert!', type: 'success' });
-    } catch (error) {
-      console.error('Save Elternportal Error:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Fehler beim Speichern der Zugangsdaten';
-      setToast({ message: errorMessage, type: 'error' });
-    } finally {
-      setSavingElternportal(false);
-    }
   };
 
   useEffect(() => {
@@ -401,10 +359,6 @@ export default function Dashboard() {
             <p className="text-gray-400">Hausaufgaben - Seite noch in Bearbeitung</p>
           </div>
         )}
-
-        {activeTab === 'substitutions' && (
-          <SubstitutionsView onSettingsClick={() => setShowEditModal(true)} />
-        )}
       </div>
 
       {/* Bottom Navigation */}
@@ -415,7 +369,6 @@ export default function Dashboard() {
             { id: 'schedule', label: 'Stundenplan', Icon: BookOpen },
             { id: 'subjects', label: 'Fächer', Icon: BookOpen },
             { id: 'homework', label: 'Hausaufgaben', Icon: Edit },
-            { id: 'substitutions', label: 'Vertretungen', Icon: RefreshCw },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -497,12 +450,6 @@ export default function Dashboard() {
             </div>
 
             <div className="flex gap-3 modal-buttons-animate flex-col">
-              <button
-                onClick={() => setShowElternportalSettings(true)}
-                className="w-full py-2 rounded-lg bg-purple-500/20 hover:bg-purple-500/30 border border-purple-400/50 text-purple-300 font-medium transition-all"
-              >
-                Elternportal-Zugangsdaten
-              </button>
               <div className="flex gap-3">
                 <button
                   onClick={() => setShowEditModal(false)}
@@ -518,56 +465,6 @@ export default function Dashboard() {
                   {savingProfile ? 'Speichern...' : 'Speichern'}
                 </button>
               </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Elternportal Settings Modal */}
-      {showElternportalSettings && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 modal-backdrop-animate">
-          <div className="bg-gradient-to-b from-[#1a1a1a] to-[#0f0f0f] border border-white/10 rounded-2xl p-8 max-w-md w-full modal-animate">
-            <h2 className="text-white text-2xl font-semibold mb-2">Elternportal-Zugang</h2>
-            <p className="text-gray-400 text-sm mb-6">Deine Anmeldedaten werden sicher verschlüsselt gespeichert.</p>
-
-            <div className="space-y-4 mb-6">
-              <div className="field modal-field-1">
-                <input
-                  className="focus-glow px-4 py-3 rounded-xl text-white placeholder-transparent w-full"
-                  type="email"
-                  placeholder=" "
-                  value={elternportalEmail}
-                  onChange={e => setElternportalEmail(e.target.value)}
-                />
-                <label>E-Mail</label>
-              </div>
-
-              <div className="field modal-field-2">
-                <input
-                  className="focus-glow px-4 py-3 rounded-xl text-white placeholder-transparent w-full"
-                  type="password"
-                  placeholder=" "
-                  value={elternportalPassword}
-                  onChange={e => setElternportalPassword(e.target.value)}
-                />
-                <label>Passwort</label>
-              </div>
-            </div>
-
-            <div className="flex gap-3 modal-buttons-animate">
-              <button
-                onClick={() => setShowElternportalSettings(false)}
-                className="flex-1 py-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 text-white font-medium transition-all"
-              >
-                Abbrechen
-              </button>
-              <button
-                onClick={handleSaveElternportalCredentials}
-                disabled={savingElternportal}
-                className="flex-1 py-2 rounded-lg bg-purple-500 hover:bg-purple-600 text-white font-medium transition-all disabled:opacity-50"
-              >
-                {savingElternportal ? 'Speichern...' : 'Speichern'}
-              </button>
             </div>
           </div>
         </div>

@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import AuthBackground from '@/app/components/AuthBackground';
+import AuthBackground from '@/app/components/common/AuthBackground';
 
 export default function Home() {
   const [visible, setVisible] = useState(false);

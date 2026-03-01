@@ -1,9 +1,9 @@
 'use client';
 import { useState } from 'react';
-import { createClient } from '@/utils/supabase/client';
+import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
-import AuthBackground from '@/app/components/AuthBackground';
-import Toast from '@/app/components/Toast';
+import AuthBackground from '@/app/components/common/AuthBackground';
+import Toast from '@/app/components/common/Toast';
 
 export default function Register() {
   const [email, setEmail] = useState('');
