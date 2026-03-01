@@ -10,12 +10,14 @@ function LoginContent() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [maintenanceMode, setMaintenanceMode] = useState(false);
+  const [blockedMessageVisible, setBlockedMessageVisible] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const supabase = createClient();
   const router = useRouter();
   const searchParams = useSearchParams();
   const blockedByAdmin = searchParams.get('blocked') === '1';
   const redirectedForMaintenance = searchParams.get('maintenance') === '1';
+  const showBlockedMessage = blockedByAdmin || blockedMessageVisible;
 
   useEffect(() => {
     const loadMaintenanceMode = async () => {
@@ -74,7 +76,7 @@ function LoginContent() {
 
     if (profile?.is_blocked) {
       await supabase.auth.signOut();
-      setToast({ message: 'Dein Konto wurde gesperrt. Kontaktiere einen Administrator.', type: 'error' });
+      setBlockedMessageVisible(true);
       setLoading(false);
       return;
     }
@@ -120,11 +122,11 @@ function LoginContent() {
           </div>
         )}
 
-        {(blockedByAdmin || redirectedForMaintenance) && (
+        {(showBlockedMessage || redirectedForMaintenance) && (
           <div className="w-full max-w-xl mb-6 rounded-xl border border-red-500/40 bg-red-500/15 p-4 text-red-200 animate-[fadeIn_0.35s_ease-out]">
             <p className="font-semibold">Zugriff eingeschränkt</p>
             <p className="text-sm text-red-100/90 mt-1">
-              {blockedByAdmin
+              {showBlockedMessage
                 ? 'Dein Konto wurde gesperrt. Kontaktiere einen Administrator.'
                 : 'Wartungsmodus aktiv. Login aktuell nur für Administratoren möglich.'}
             </p>

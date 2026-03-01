@@ -58,23 +58,25 @@ export async function updateSession(request: NextRequest) {
       }
     }
 
-    if (profile?.is_blocked) {
-      await supabase.auth.signOut()
+    const pathname = request.nextUrl.pathname
+    const isLoginPage = pathname === '/login'
+    const isRegisterPage = pathname === '/register'
+
+    if (profile?.is_blocked && !isLoginPage) {
       const loginUrl = request.nextUrl.clone()
       loginUrl.pathname = '/login'
       loginUrl.searchParams.set('blocked', '1')
       return NextResponse.redirect(loginUrl)
     }
 
-    if (maintenanceMode && request.nextUrl.pathname === '/register') {
+    if (maintenanceMode && isRegisterPage) {
       const loginUrl = request.nextUrl.clone()
       loginUrl.pathname = '/login'
       loginUrl.searchParams.set('maintenance', '1')
       return NextResponse.redirect(loginUrl)
     }
 
-    if (session && maintenanceMode && profile?.role !== 'admin') {
-      await supabase.auth.signOut()
+    if (session && maintenanceMode && profile?.role !== 'admin' && !isLoginPage) {
       const loginUrl = request.nextUrl.clone()
       loginUrl.pathname = '/login'
       loginUrl.searchParams.set('maintenance', '1')
@@ -82,14 +84,19 @@ export async function updateSession(request: NextRequest) {
     }
 
     // Wenn auf protected routes und keine Session, redirect zu login
-    if (!session && (request.nextUrl.pathname.startsWith('/dashboard') || request.nextUrl.pathname.startsWith('/auth'))) {
+    if (!session && (pathname.startsWith('/dashboard') || pathname.startsWith('/auth'))) {
       const loginUrl = request.nextUrl.clone()
       loginUrl.pathname = '/login'
       return NextResponse.redirect(loginUrl)
     }
 
     // Wenn auf login/register und Session existiert, redirect zu dashboard
-    if (session && (request.nextUrl.pathname === '/login' || request.nextUrl.pathname === '/register')) {
+    if (
+      session &&
+      (isLoginPage || isRegisterPage) &&
+      !profile?.is_blocked &&
+      !(maintenanceMode && profile?.role !== 'admin')
+    ) {
       const dashboardUrl = request.nextUrl.clone()
       dashboardUrl.pathname = '/dashboard'
       return NextResponse.redirect(dashboardUrl)
