@@ -252,7 +252,7 @@ export default function Dashboard() {
         {activeTab === 'dashboard' && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* TODO's */}
-            <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-6">
+            <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-6 card-stagger-1">
               <h2 className="text-xl font-semibold mb-4 flex items-center gap-2"><CheckSquare className="w-5 h-5" /> ToDos</h2>
               <div className="space-y-3">
                 {[
@@ -269,7 +269,7 @@ export default function Dashboard() {
             </div>
 
             {/* Hausaufgaben */}
-            <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-6">
+            <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-6 card-stagger-2">
               <h2 className="text-xl font-semibold mb-4 flex items-center gap-2"><BookOpen className="w-5 h-5" /> Hausaufgaben</h2>
               <div className="space-y-3">
                 {[
@@ -287,7 +287,7 @@ export default function Dashboard() {
             </div>
 
             {/* Notendurchschnitt */}
-            <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-6">
+            <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-6 card-stagger-3">
               <h2 className="text-xl font-semibold mb-4 flex items-center gap-2"><BarChart3 className="w-5 h-5" /> Leistungen</h2>
               <div className="space-y-3">
                 <div>
@@ -307,7 +307,7 @@ export default function Dashboard() {
             </div>
 
             {/* Anstehende Termine */}
-            <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-6 lg:col-span-2">
+            <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-6 lg:col-span-2 card-stagger-4">
               <h2 className="text-xl font-semibold mb-4 flex items-center gap-2"><Calendar className="w-5 h-5" /> Nächste Termine</h2>
               <div className="space-y-2">
                 {[
@@ -325,7 +325,7 @@ export default function Dashboard() {
             </div>
 
             {/* Quick Actions */}
-            <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-6">
+            <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-6 card-stagger-5">
               <h2 className="text-xl font-semibold mb-4 flex items-center gap-2"><Zap className="w-5 h-5" /> Quick Links</h2>
               <div className="space-y-2">
                 <button className="w-full py-2 px-3 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 transition-all text-sm">
@@ -343,32 +343,32 @@ export default function Dashboard() {
         )}
 
         {activeTab === 'schedule' && (
-          <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-8 text-center">
+          <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-8 text-center content-fade-in">
             <p className="text-gray-400">Stundenplan - Seite noch in Bearbeitung</p>
           </div>
         )}
 
         {activeTab === 'subjects' && (
-          <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-8 text-center">
+          <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-8 text-center content-fade-in">
             <p className="text-gray-400">Fächer - Seite noch in Bearbeitung</p>
           </div>
         )}
 
         {activeTab === 'homework' && (
-          <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-8 text-center">
+          <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-8 text-center content-fade-in">
             <p className="text-gray-400">Hausaufgaben - Seite noch in Bearbeitung</p>
           </div>
         )}
 
         {activeTab === 'substitutions' && (
-          <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-8 text-center">
+          <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-8 text-center content-fade-in">
             <p className="text-gray-400">Vertretungen - Seite noch in Bearbeitung</p>
           </div>
         )}
       </div>
 
       {/* Bottom Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 z-20 backdrop-blur-md bg-gradient-to-t from-white/5 to-white/[0.02] border-t border-white/10">
+      <div className="fixed bottom-0 left-0 right-0 z-20 backdrop-blur-md bg-gradient-to-t from-white/5 to-white/[0.02] border-t border-white/10 nav-bar-animate">
         <div className="max-w-7xl mx-auto px-6 py-2.5 flex justify-around items-center">
           {[
             { id: 'dashboard', label: 'Dashboard', Icon: BarChart3 },
@@ -380,13 +380,13 @@ export default function Dashboard() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex flex-col items-center gap-1 px-3 py-1.5 rounded-lg transition-all duration-300 ${
+              className={`flex flex-col items-center gap-1 px-3 py-1.5 rounded-lg transition-all duration-300 nav-item-animate ${
                 activeTab === tab.id
                   ? 'bg-gradient-to-br from-blue-500/40 to-purple-500/40 border border-blue-400/50 text-white shadow-lg shadow-blue-500/20'
                   : 'text-gray-400 hover:text-white hover:bg-white/5'
               }`}
             >
-              <tab.Icon className="w-5 h-5" />
+              <tab.Icon className={`w-5 h-5 ${activeTab === tab.id ? 'icon-pulse' : ''}`} />
               <span className="text-xs font-medium hidden sm:inline">{tab.label}</span>
             </button>
           ))}

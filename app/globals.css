@@ -195,7 +195,97 @@ button, a, input {
   animation: pulseBg 2s ease-in-out infinite;
 }
 
+/* Navigation Bar Animations */
+@keyframes slideUpNav {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes navItemBounce {
+  0% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-4px) scale(1.02); }
+  100% { transform: translateY(0) scale(1); }
+}
+
+@keyframes iconPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.nav-bar-animate {
+  animation: slideUpNav 0.6s cubic-bezier(0.23, 1, 0.320, 1);
+}
+
+.nav-item-animate {
+  animation: navItemBounce 0.5s ease-out;
+}
+
+.icon-pulse {
+  animation: iconPulse 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.gradient-animate {
+  background-size: 200% 200%;
+  animation: gradientShift 3s ease infinite;
+}
+
+/* Dashboard Cards Animations */
+@keyframes cardSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes cardStagger1 { animation: cardSlideIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s forwards; }
+@keyframes cardStagger2 { animation: cardSlideIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s forwards; }
+@keyframes cardStagger3 { animation: cardSlideIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.3s forwards; }
+@keyframes cardStagger4 { animation: cardSlideIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.4s forwards; }
+@keyframes cardStagger5 { animation: cardSlideIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.5s forwards; }
+
+.card-stagger-1 { opacity: 0; animation: cardStagger1; }
+.card-stagger-2 { opacity: 0; animation: cardStagger2; }
+.card-stagger-3 { opacity: 0; animation: cardStagger3; }
+.card-stagger-4 { opacity: 0; animation: cardStagger4; }
+.card-stagger-5 { opacity: 0; animation: cardStagger5; }
+
+@keyframes contentFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.content-fade-in {
+  animation: contentFadeIn 0.4s ease-out;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .bg-pulse { animation: none; }
   .decor-circle { animation: none; }
+  .nav-bar-animate { animation: none; }
+  .nav-item-animate { animation: none; }
+  .icon-pulse { animation: none; }
+  .gradient-animate { animation: none; }
+  .card-stagger-1, .card-stagger-2, .card-stagger-3, .card-stagger-4, .card-stagger-5 { animation: none; opacity: 1; }
+  .content-fade-in { animation: none; }
 }
