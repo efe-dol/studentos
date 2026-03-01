@@ -67,7 +67,7 @@ export default function Register() {
       <AuthBackground />
       <form
         onSubmit={handleSignUp}
-        className="relative z-10 w-full max-w-xl p-10 rounded-2xl backdrop-blur-xl bg-white/5 border border-white/10 shadow-2xl"
+        className="relative z-10 w-full max-w-xl p-10 rounded-2xl backdrop-blur-xl bg-white/5 border border-white/10 shadow-2xl animate-[fadeInFast_0.3s_ease-out]"
       >
         <div className="mb-6 text-center">
           <h1 className="text-white text-3xl font-semibold">Account erstellen</h1>

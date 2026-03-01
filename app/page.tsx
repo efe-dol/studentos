@@ -27,7 +27,7 @@ export default function Home() {
       {/* Hero Section */}
       <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-6 py-20">
         <div
-          className={`max-w-4xl mx-auto text-center space-y-8 transition-all duration-1000 ${
+          className={`max-w-4xl mx-auto text-center space-y-8 transition-all duration-500 ease-out ${
             visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
           }`}
         >
@@ -50,7 +50,7 @@ export default function Home() {
 
         {/* Installation Guide */}
         <div
-          className={`max-w-3xl mx-auto mt-20 transition-all duration-1000 delay-300 ${
+          className={`max-w-3xl mx-auto mt-20 transition-all duration-500 delay-100 ease-out ${
             visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
           }`}
         >
@@ -138,7 +138,7 @@ export default function Home() {
 
         {/* Features Preview */}
         <div
-          className={`max-w-5xl mx-auto mt-20 transition-all duration-1000 delay-500 ${
+          className={`max-w-5xl mx-auto mt-20 transition-all duration-500 delay-150 ease-out ${
             visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
           }`}
         >
