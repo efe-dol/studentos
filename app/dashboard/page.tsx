@@ -4,6 +4,7 @@ import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
 import AuthBackground from '@/app/components/AuthBackground';
 import Toast from '@/app/components/Toast';
+import { Settings, CheckSquare, BookOpen, BarChart3, Calendar, Zap, PencilSquare, RefreshCw } from 'lucide-react';
 
 type User = {
   id: string;
@@ -234,7 +235,7 @@ export default function Dashboard() {
               onClick={() => setShowEditModal(true)}
               className="p-2 rounded-lg hover:bg-white/10 transition-all border border-white/10"
             >
-              ⚙️
+              <Settings className="w-5 h-5" />
             </button>
             <button
               onClick={handleSignOut}
@@ -252,7 +253,7 @@ export default function Dashboard() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* TODO's */}
             <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-6">
-              <h2 className="text-xl font-semibold mb-4">📝 ToDos</h2>
+              <h2 className="text-xl font-semibold mb-4 flex items-center gap-2"><CheckSquare className="w-5 h-5" /> ToDos</h2>
               <div className="space-y-3">
                 {[
                   { title: 'Englisch Hausaufgaben', done: false },
@@ -269,7 +270,7 @@ export default function Dashboard() {
 
             {/* Hausaufgaben */}
             <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-6">
-              <h2 className="text-xl font-semibold mb-4">📚 Hausaufgaben</h2>
+              <h2 className="text-xl font-semibold mb-4 flex items-center gap-2"><BookOpen className="w-5 h-5" /> Hausaufgaben</h2>
               <div className="space-y-3">
                 {[
                   { subject: 'Deutsch', task: 'S. 145-150', due: 'Morgen' },
@@ -287,7 +288,7 @@ export default function Dashboard() {
 
             {/* Notendurchschnitt */}
             <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-6">
-              <h2 className="text-xl font-semibold mb-4">📊 Leistungen</h2>
+              <h2 className="text-xl font-semibold mb-4 flex items-center gap-2"><BarChart3 className="w-5 h-5" /> Leistungen</h2>
               <div className="space-y-3">
                 <div>
                   <div className="flex justify-between mb-2">
@@ -307,7 +308,7 @@ export default function Dashboard() {
 
             {/* Anstehende Termine */}
             <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-6 lg:col-span-2">
-              <h2 className="text-xl font-semibold mb-4">📅 Nächste Termine</h2>
+              <h2 className="text-xl font-semibold mb-4 flex items-center gap-2"><Calendar className="w-5 h-5" /> Nächste Termine</h2>
               <div className="space-y-2">
                 {[
                   { date: '28.02.2026', event: 'Bio Test' },
@@ -325,7 +326,7 @@ export default function Dashboard() {
 
             {/* Quick Actions */}
             <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-6">
-              <h2 className="text-xl font-semibold mb-4">⚡ Quick Links</h2>
+              <h2 className="text-xl font-semibold mb-4 flex items-center gap-2"><Zap className="w-5 h-5" /> Quick Links</h2>
               <div className="space-y-2">
                 <button className="w-full py-2 px-3 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 transition-all text-sm">
                   Krankmeldung
@@ -370,11 +371,11 @@ export default function Dashboard() {
       <div className="fixed bottom-0 left-0 right-0 z-20 border-t border-white/10 backdrop-blur-xl bg-white/5">
         <div className="max-w-7xl mx-auto px-6 py-4 flex justify-around items-center">
           {[
-            { id: 'dashboard', label: 'Dashboard', icon: '📊' },
-            { id: 'schedule', label: 'Stundenplan', icon: '📖' },
-            { id: 'subjects', label: 'Fächer', icon: '📚' },
-            { id: 'homework', label: 'Hausaufgaben', icon: '✏️' },
-            { id: 'substitutions', label: 'Vertretungen', icon: '🔄' },
+            { id: 'dashboard', label: 'Dashboard', Icon: BarChart3 },
+            { id: 'schedule', label: 'Stundenplan', Icon: BookOpen },
+            { id: 'subjects', label: 'Fächer', Icon: BookOpen },
+            { id: 'homework', label: 'Hausaufgaben', Icon: PencilSquare },
+            { id: 'substitutions', label: 'Vertretungen', Icon: RefreshCw },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -385,7 +386,7 @@ export default function Dashboard() {
                   : 'text-gray-400 hover:text-white'
               }`}
             >
-              <span className="text-xl">{tab.icon}</span>
+              <tab.Icon className="w-5 h-5" />
               <span className="text-xs font-medium hidden sm:inline">{tab.label}</span>
             </button>
           ))}
