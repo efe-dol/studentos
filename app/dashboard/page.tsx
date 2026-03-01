@@ -217,7 +217,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#0a0a0a] via-[#121212] to-[#1a1a1a] text-white overflow-x-hidden">
+    <div className="fixed inset-0 bg-gradient-to-b from-[#0a0a0a] via-[#121212] to-[#1a1a1a] text-white flex flex-col">
       <AuthBackground />
 
       {/* Header */}
@@ -248,7 +248,7 @@ export default function Dashboard() {
       </div>
 
       {/* Main Content */}
-      <div className="relative z-10 max-w-7xl mx-auto px-6 py-8 pb-24">
+      <div className="flex-1 overflow-y-auto z-10 max-w-7xl mx-auto w-full px-6 py-8 pb-24">
         {activeTab === 'dashboard' && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* TODO's */}

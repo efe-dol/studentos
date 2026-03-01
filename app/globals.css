@@ -33,11 +33,10 @@ html, body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  overflow-x: hidden;
-  overflow-y: auto;
-  height: 100vh;
+  overflow: hidden;
+  height: 100%;
   width: 100%;
-  position: relative;
+  position: fixed;
   overscroll-behavior: none;
   touch-action: pan-y pan-x;
   -webkit-overflow-scrolling: touch;
