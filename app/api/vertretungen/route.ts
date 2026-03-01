@@ -42,6 +42,9 @@ export async function GET(request: NextRequest) {
     // Rufe Go-Backend auf
     const goBackendUrl = process.env.GO_BACKEND_URL || 'http://localhost:8000';
     
+    console.log('Fetching from Go Backend:', goBackendUrl);
+    console.log('User ID:', user.id);
+    
     try {
       const response = await fetch(`${goBackendUrl}/api/vertretungen`, {
         method: 'POST',
@@ -52,19 +55,25 @@ export async function GET(request: NextRequest) {
         }),
       });
 
+      console.log('Go Backend Response status:', response.status);
+
       if (!response.ok) {
-        throw new Error(`Go Backend returned ${response.status}`);
+        const errorText = await response.text();
+        console.error('Go Backend error:', errorText);
+        throw new Error(`Go Backend returned ${response.status}: ${errorText}`);
       }
 
       const vertretungen = await response.json();
+      console.log('Successfully fetched vertretungen:', vertretungen);
       return NextResponse.json(vertretungen);
     } catch (goError) {
       console.error('Go Backend Error:', goError);
+      console.error('Go Backend URL was:', goBackendUrl);
       
       // Fallback: Mock-Daten wenn Backend nicht erreichbar
       const mockVertretungen = {
         heute: {
-          motd: 'Backend nicht erreichbar - Mock-Daten',
+          motd: `Backend nicht erreichbar: ${goError instanceof Error ? goError.message : 'Unbekannter Fehler'}`,
           vertretungen: [],
         },
         morgen: {

@@ -31,15 +31,25 @@ export function SubstitutionsView({ onSettingsClick }: { onSettingsClick: () => 
   const fetchVertretungen = async () => {
     setRefreshing(true);
     try {
+      console.log('Fetching vertretungen...');
       const response = await fetch('/api/vertretungen');
+      
+      console.log('Response status:', response.status);
+      
       if (!response.ok) {
-        throw new Error('Zugangsdaten nicht konfiguriert');
+        const errorData = await response.json();
+        console.error('API error response:', errorData);
+        throw new Error(errorData.error || `HTTP ${response.status}: Fehler beim Abrufen`);
       }
+      
       const result = await response.json();
+      console.log('Vertretungen loaded:', result);
       setData(result);
       setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Fehler beim Abrufen');
+      const errorMsg = err instanceof Error ? err.message : 'Fehler beim Abrufen';
+      console.error('Fetch error:', err);
+      setError(errorMsg);
       setData(null);
     } finally {
       setRefreshing(false);
