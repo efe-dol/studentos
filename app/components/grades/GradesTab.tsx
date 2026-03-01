@@ -8,10 +8,9 @@ import {
   formatGrade,
   getGradeLabel,
 } from '@/lib/grades/calculator';
-import AddSubjectDialog from './AddSubjectDialog';
 import AddGradeDialog from './AddGradeDialog';
 import SubjectDetail from './SubjectDetail';
-import { Plus, BookOpen, RotateCw } from 'lucide-react';
+import { Plus, BookOpen, RotateCw, AlertCircle } from 'lucide-react';
 
 export default function GradesTab() {
   const [selectedSubjectId, setSelectedSubjectId] = useState<string | null>(null);
@@ -24,8 +23,6 @@ export default function GradesTab() {
     loading: subjectsLoading,
     error: subjectsError,
     fetchSubjects,
-    updateSubject,
-    deleteSubject,
   } = useSubjects();
 
   const {
@@ -34,7 +31,6 @@ export default function GradesTab() {
     error: gradesError,
     fetchGrades,
     addGrade,
-    updateGrade,
     deleteGrade,
   } = useGrades();
 
@@ -68,6 +64,7 @@ export default function GradesTab() {
     setIsTransitioning(true);
     setTimeout(() => {
       setSelectedSubjectId(subjectId);
+      setIsTransitioning(false);
     }, 150);
   };
 
@@ -75,7 +72,6 @@ export default function GradesTab() {
     setIsTransitioning(true);
     setTimeout(() => {
       setSelectedSubjectId(null);
-      setIsTransitioning(false);
     }, 150);
   };
 
@@ -91,174 +87,212 @@ export default function GradesTab() {
 
   if (selectedSubject) {
     return (
-      <div key={selectedSubjectId} className={`transition-opacity duration-300 ${isTransitioning ? 'opacity-0' : 'opacity-100'}`}>
+      <div className={`transition-all duration-300 ${isTransitioning ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}`}>
         <SubjectDetail
           subject={selectedSubject}
           grades={grades}
           onBack={handleBack}
           onAddGrade={handleAddGrade}
           onDeleteGrade={deleteGrade}
-          isLoading={gradesLoading}
         />
       </div>
     );
   }
 
+  const isLoading = subjectsLoading || gradesLoading;
+  const hasError = subjectsError || gradesError;
+
   return (
-    <div className={`space-y-6 transition-all duration-300 ${isTransitioning ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+    <div className="space-y-6 animate-in fade-in duration-300">
       {/* Header */}
-      <div className="animate-in slide-in-from-top duration-300 delay-75">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <h1 className="text-3xl font-bold text-white mb-1">Fächer & Noten</h1>
-            <p className="text-gray-400">Verwalte deine Fächer und trage deine Noten ein</p>
+      <div className="flex items-center justify-between gap-3 animate-in slide-in-from-top-2 duration-300">
+        <div className="flex items-center gap-4 flex-1">
+          <div className="p-3 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-lg">
+            <BookOpen className="w-6 h-6 text-blue-400" />
           </div>
-          <button
-            onClick={handleRefresh}
-            disabled={isRefreshing || subjectsLoading}
-            className="p-2.5 rounded-lg hover:bg-white/10 border border-white/10 text-gray-400 hover:text-white transition-all disabled:opacity-50"
-            title="Daten neu laden"
-          >
-            <RotateCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
-          </button>
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-white">Fächer & Noten</h1>
+            <p className="text-sm text-gray-400">Verwalte deine Fächer und trage deine Noten ein</p>
+          </div>
         </div>
+        <button
+          onClick={handleRefresh}
+          disabled={isRefreshing || isLoading}
+          className="p-3 bg-gradient-to-r from-gray-500/20 to-gray-500/20 hover:from-gray-500/30 hover:to-gray-500/30 border border-gray-500/30 rounded-lg text-gray-300 transition-all hover:scale-105 active:scale-[0.95] duration-200 disabled:opacity-50"
+          title="Daten neu laden"
+        >
+          <RotateCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
+        </button>
       </div>
 
-      {/* Overall Average */}
-      {subjects.length > 0 && (
-        <div className="bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-500/20 rounded-lg p-6 animate-in slide-in-from-left duration-300 delay-100">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-400 text-sm mb-1">Gesamtdurchschnitt</p>
-              <p className="text-4xl font-bold text-white">
-                {overallAverage !== null ? formatGrade(overallAverage) : '-'}
-              </p>
-              {overallAverage !== null && (
-                <p className="text-gray-500 text-xs mt-2">{getGradeLabel(overallAverage)}</p>
+      {/* Error Message */}
+      {hasError && (
+        <div className="flex gap-2 p-4 bg-red-500/10 border border-red-500/30 rounded-lg text-red-300 animate-in fade-in shake duration-300">
+          <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+          <span className="text-sm">{subjectsError || gradesError}</span>
+        </div>
+      )}
+
+      {/* Overall Average Card */}
+      {!isLoading && (subjects.length > 0 || grades.length > 0) && overallAverage !== null && (
+        <div className="p-6 bg-gradient-to-br from-blue-500/10 to-purple-500/10 border border-blue-500/20 rounded-xl animate-in slide-in-from-top-4 duration-300 delay-100">
+          <div className="space-y-3">
+            <p className="text-sm font-medium text-gray-400">Durchschnitt gesamt</p>
+            <div className="flex items-baseline gap-3">
+              <div className="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
+                {overallAverage > 0 ? formatGrade(overallAverage) : '—'}
+              </div>
+              {overallAverage > 0 && (
+                <span className="text-lg text-gray-400">{getGradeLabel(overallAverage)}</span>
               )}
             </div>
-            <div className="text-right">
-              <p className="text-gray-400 text-sm">Noten: {grades.length}</p>
-              <p className="text-gray-400 text-sm">Fächer: {subjects.length}</p>
+            <p className="text-xs text-gray-500">
+              {subjects.length} Fach{subjects.length !== 1 ? 'er' : ''} • {grades.length} Note{grades.length !== 1 ? 'n' : ''}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Loading State */}
+      {isLoading ? (
+        <div className="space-y-4 animate-in fade-in duration-300">
+          {[1, 2, 3].map(i => (
+            <div
+              key={i}
+              className="h-24 bg-white/5 border border-white/10 rounded-lg animate-pulse"
+              style={{ animationDelay: `${i * 50}ms` }}
+            />
+          ))}
+        </div>
+      ) : subjects.length === 0 ? (
+        <div className="text-center py-16 text-gray-400 animate-in fade-in zoom-in duration-300">
+          <BookOpen className="w-12 h-12 mx-auto mb-4 opacity-50" />
+          <p className="text-lg font-medium">Keine Fächer vorhanden</p>
+          <p className="text-sm text-gray-500 mt-2">Füge dein erstes Fach in den Einstellungen hinzu</p>
+        </div>
+      ) : (
+        <div className="space-y-6">
+            <div className="space-y-3 animate-in slide-in-from-left duration-300 delay-150">
+              <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wider px-1">
+                Hauptfächer ({hauptfaecher.length})
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {hauptfaecher.map((subject, idx) => {
+                  const subjectGrades = grades.filter(g => g.subject_id === subject.id);
+                  const subjectAverage = calculateSubjectAverage(subjectGrades);
+
+                  return (
+                    <button
+                      key={subject.id}
+                      onClick={() => handleSelectSubject(subject.id)}
+                      className="p-4 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-lg text-left transition-all group animate-in slide-in-from-left duration-300 hover:scale-[1.02] transform"
+                      style={{ animationDelay: `${150 + idx * 75}ms` }}
+                    >
+                      <div className="flex items-start justify-between gap-3 mb-3">
+                        <div className="flex items-center gap-3 flex-1">
+                          <div
+                            className="w-5 h-5 rounded-full flex-shrink-0 shadow-lg"
+                            style={{ backgroundColor: subject.color }}
+                          />
+                          <span className="font-semibold text-white truncate text-base">
+                            {subject.name}
+                          </span>
+                        </div>
+                        <span
+                          className={`text-lg font-bold flex-shrink-0 ${
+                            subjectAverage && subjectAverage > 0
+                              ? subjectAverage <= 2
+                                ? 'text-green-400'
+                                : subjectAverage <= 3.5
+                                ? 'text-yellow-400'
+                                : 'text-red-400'
+                              : 'text-gray-500'
+                          }`}
+                        >
+                          {subjectAverage && subjectAverage > 0 ? formatGrade(subjectAverage) : '—'}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between px-1">
+                        <span className="text-xs text-gray-500">
+                          {subjectGrades.length} Note{subjectGrades.length !== 1 ? 'n' : ''}
+                        </span>
+                        <span className="text-xs text-gray-400 font-medium group-hover:translate-x-1 transition-transform opacity-0 group-hover:opacity-100">
+                          Öffnen →
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          </div>
+
+          {/* Nebenfächer */}
+          {nebenfaecher.length > 0 && (
+            <div className="space-y-3 animate-in slide-in-from-left duration-300 delay-200">
+              <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wider px-1">
+                Nebenfächer ({nebenfaecher.length})
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {nebenfaecher.map((subject, idx) => {
+                  const subjectGrades = grades.filter(g => g.subject_id === subject.id);
+                  const subjectAverage = calculateSubjectAverage(subjectGrades);
+
+                  return (
+                    <button
+                      key={subject.id}
+                      onClick={() => handleSelectSubject(subject.id)}
+                      className="p-4 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-lg text-left transition-all group animate-in slide-in-from-left duration-300 hover:scale-[1.02] transform"
+                      style={{ animationDelay: `${200 + (hauptfaecher.length + idx) * 75}ms` }}
+                    >
+                      <div className="flex items-start justify-between gap-3 mb-3">
+                        <div className="flex items-center gap-3 flex-1">
+                          <div
+                            className="w-5 h-5 rounded-full flex-shrink-0 shadow-lg"
+                            style={{ backgroundColor: subject.color }}
+                          />
+                          <span className="font-semibold text-white truncate text-base">
+                            {subject.name}
+                          </span>
+                        </div>
+                        <span
+                          className={`text-lg font-bold flex-shrink-0 ${
+                            subjectAverage && subjectAverage > 0
+                              ? subjectAverage <= 2
+                                ? 'text-green-400'
+                                : subjectAverage <= 3.5
+                                ? 'text-yellow-400'
+                                : 'text-red-400'
+                              : 'text-gray-500'
+                          }`}
+                        >
+                          {subjectAverage && subjectAverage > 0 ? formatGrade(subjectAverage) : '—'}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between px-1">
+                        <span className="text-xs text-gray-500">
+                          {subjectGrades.length} Note{subjectGrades.length !== 1 ? 'n' : ''}
+                        </span>
+                        <span className="text-xs text-gray-400 font-medium group-hover:translate-x-1 transition-transform opacity-0 group-hover:opacity-100">
+                          Öffnen →
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
-      {/* Hauptfächer */}
-      {hauptfaecher.length > 0 && (
-        <div className="animate-in slide-in-from-left duration-300 delay-150">
-          <h2 className="text-xl font-bold text-white mb-3 flex items-center gap-2 animate-in fade-in duration-300 delay-100">
-            <BookOpen className="w-5 h-5 text-blue-400" />
-            Hauptfächer
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {hauptfaecher.map((subject, idx) => {
-              const subjectGrades = grades.filter(g => g.subject_id === subject.id);
-              const avg = calculateSubjectAverage(subjectGrades);
-              return (
-                <button
-                  key={subject.id}
-                  onClick={() => handleSelectSubject(subject.id)}
-                  className="p-4 bg-gradient-to-br from-white/10 to-white/5 border border-white/10 hover:border-white/20 hover:bg-gradient-to-br hover:from-white/15 hover:to-white/10 hover:shadow-xl hover:shadow-blue-500/10 rounded-lg transition-all duration-300 group animate-in slide-in-from-left"
-                  style={{ animationDelay: `${200 + idx * 50}ms` }}
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <h3 className="font-bold text-white text-lg flex-1 text-left group-hover:text-blue-300 transition-colors">
-                      {subject.name}
-                    </h3>
-                    <div
-                      className="w-6 h-6 rounded-full flex-shrink-0 shadow-lg group-hover:scale-110 transition-transform"
-                      style={{ backgroundColor: subject.color }}
-                    />
-                  </div>
-                  <div className="text-right">
-                    <p className="text-2xl font-bold text-white">
-                      {avg !== null ? formatGrade(avg) : '-'}
-                    </p>
-                    {avg !== null && (
-                      <p className="text-xs text-gray-500 mt-1">{getGradeLabel(avg)}</p>
-                    )}
-                    <p className="text-xs text-gray-600 mt-2">
-                      {subjectGrades.length} Note{subjectGrades.length !== 1 ? 'n' : ''}
-                    </p>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Nebenfächer */}
-      {nebenfaecher.length > 0 && (
-        <div className="animate-in slide-in-from-left duration-300 delay-200">
-          <h2 className="text-xl font-bold text-white mb-3 flex items-center gap-2 animate-in fade-in duration-300 delay-150">
-            <BookOpen className="w-5 h-5 text-purple-400" />
-            Nebenfächer
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {nebenfaecher.map((subject, idx) => {
-              const subjectGrades = grades.filter(g => g.subject_id === subject.id);
-              const avg = calculateSubjectAverage(subjectGrades);
-              return (
-                <button
-                  key={subject.id}
-                  onClick={() => handleSelectSubject(subject.id)}
-                  className="p-4 bg-gradient-to-br from-white/10 to-white/5 border border-white/10 hover:border-white/20 hover:bg-gradient-to-br hover:from-white/15 hover:to-white/10 hover:shadow-xl hover:shadow-purple-500/10 rounded-lg transition-all duration-300 group animate-in slide-in-from-left"
-                  style={{ animationDelay: `${300 + idx * 50}ms` }}
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <h3 className="font-bold text-white text-lg flex-1 text-left group-hover:text-purple-300 transition-colors">
-                      {subject.name}
-                    </h3>
-                    <div
-                      className="w-6 h-6 rounded-full flex-shrink-0 shadow-lg group-hover:scale-110 transition-transform"
-                      style={{ backgroundColor: subject.color }}
-                    />
-                  </div>
-                  <div className="text-right">
-                    <p className="text-2xl font-bold text-white">
-                      {avg !== null ? formatGrade(avg) : '-'}
-                    </p>
-                    {avg !== null && (
-                      <p className="text-xs text-gray-500 mt-1">{getGradeLabel(avg)}</p>
-                    )}
-                    <p className="text-xs text-gray-600 mt-2">
-                      {subjectGrades.length} Note{subjectGrades.length !== 1 ? 'n' : ''}
-                    </p>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Empty State */}
-      {subjects.length === 0 && (
-        <div className="bg-white/5 border border-white/10 rounded-lg p-12 text-center animate-in fade-in zoom-in duration-300">
-          <BookOpen className="w-12 h-12 text-gray-600 mx-auto mb-4 animate-bounce" />
-          <h3 className="text-lg font-bold text-white mb-2">Keine Fächer vorhanden</h3>
-          <p className="text-gray-400 mb-4">
-            Öffne die Einstellungen und füge dein erstes Fach hinzu, um Noten zu verwalten
-          </p>
-        </div>
-      )}
-
-      {/* Add Subject Dialog */}
-      {/* Removed - Now handled through Settings Modal */}
-
-      {/* Error Messages */}
-      {subjectsError && (
-        <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 text-red-300 animate-in shake duration-300">
-          {subjectsError}
-        </div>
-      )}
-      {gradesError && (
-        <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 text-red-300 animate-in shake duration-300">
-          {gradesError}
-        </div>
+      {/* Add Grade Dialog */}
+      {selectedSubjectId && (
+        <AddGradeDialog
+          isOpen={showAddGradeDialog}
+          subjectId={selectedSubjectId}
+          onClose={() => setShowAddGradeDialog(false)}
+          onAdd={handleAddGrade}
+        />
       )}
     </div>
   );

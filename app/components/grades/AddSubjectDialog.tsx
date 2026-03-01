@@ -1,123 +1,123 @@
 'use client';
 
-import { useState } from 'react';
-import { X, BookOpen } from 'lucide-react';
+import { useCallback, useState } from 'react';
+import { X } from 'lucide-react';
 
 interface AddSubjectDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onAdd: (name: string, type: 'HAUPTFACH' | 'NEBENFACH', color: string) => Promise<void>;
-  isLoading?: boolean;
 }
 
 const COLOR_PRESETS = [
-  // Reds
-  '#ef4444', '#f87171', '#fca5a5',
-  // Oranges
-  '#f97316', '#fb923c', '#fbbd23',
-  // Yellows
-  '#eab308', '#facc15', '#fde047',
-  // Greens
-  '#22c55e', '#4ade80', '#86efac',
-  // Teals
-  '#14b8a6', '#2dd4bf', '#67e8f9',
-  // Blues
-  '#3b82f6', '#60a5fa', '#93c5fd',
-  // Indigo
-  '#6366f1', '#818cf8', '#a5b4fc',
-  // Purples
-  '#8b5cf6', '#a78bfa', '#ddd6fe',
-  // Pinks
-  '#ec4899', '#f472b6', '#fbcfe8',
+  '#ef4444', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#3b82f6',
+  '#f87171', '#fb923c', '#facc15', '#4ade80', '#2dd4bf', '#60a5fa',
+  '#fca5a5', '#fbbd23', '#fde047', '#86efac', '#67e8f9', '#93c5fd',
+  '#6366f1', '#8b5cf6', '#ec4899', '#818cf8', '#a78bfa', '#f472b6',
 ];
 
-export default function AddSubjectDialog({
-  isOpen,
-  onClose,
-  onAdd,
-  isLoading = false,
-}: AddSubjectDialogProps) {
+export default function AddSubjectDialog({ isOpen, onClose, onAdd }: AddSubjectDialogProps) {
   const [name, setName] = useState('');
   const [type, setType] = useState<'HAUPTFACH' | 'NEBENFACH'>('HAUPTFACH');
-  const [color, setColor] = useState(COLOR_PRESETS[0]);
+  const [color, setColor] = useState('#3b82f6');
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-
-    if (!name.trim()) {
-      setError('Fächername ist erforderlich');
-      return;
-    }
-
-    try {
-      await onAdd(name, type, color);
+  const handleClose = useCallback(() => {
+    if (!isLoading) {
       setName('');
       setType('HAUPTFACH');
-      setColor(COLOR_PRESETS[0]);
+      setColor('#3b82f6');
+      setError('');
       onClose();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Fehler beim Hinzufügen des Fachs');
     }
-  };
+  }, [isLoading, onClose]);
+
+  const handleSubmit = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+
+      if (!name.trim()) {
+        setError('Fächername ist erforderlich');
+        return;
+      }
+
+      setIsLoading(true);
+      setError('');
+
+      try {
+        await onAdd(name.trim(), type, color);
+        setName('');
+        setType('HAUPTFACH');
+        setColor('#3b82f6');
+        handleClose();
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : 'Fehler beim Hinzufügen des Fachs'
+        );
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [name, type, color, onAdd, handleClose]
+  );
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-      <div className="bg-gradient-to-br from-[#1a1a1a] to-[#0d0d0d] rounded-2xl shadow-2xl p-6 max-w-md w-full border border-white/5 max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95 scale-100 duration-300">
+      <div className="bg-gradient-to-br from-[#1a1a1a] to-[#0d0d0d] rounded-2xl shadow-2xl p-7 max-w-md w-full border border-white/5 max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-300">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6 gap-3 animate-in fade-in slide-in-from-top-4 duration-300">
-          <div className="flex items-center gap-3 flex-1 min-w-0">
-            <div className="p-2 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-lg flex-shrink-0 animate-in zoom-in-75 duration-300 delay-100">
-              <BookOpen className="w-5 h-5 text-blue-400" />
-            </div>
-            <h2 className="text-lg sm:text-xl font-bold text-white truncate animate-in fade-in slide-in-from-left-4 duration-300 delay-100">Fach hinzufügen</h2>
-          </div>
+        <div className="flex items-center justify-between mb-6 animate-in fade-in slide-in-from-top-4 duration-300">
+          <h2 className="text-xl sm:text-2xl font-bold text-white">
+            Neues Fach
+          </h2>
           <button
-            onClick={onClose}
-            className="p-2 hover:bg-white/10 rounded-lg transition-colors flex-shrink-0 hover:scale-110 duration-200"
+            onClick={handleClose}
+            disabled={isLoading}
+            className="p-2 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-all transform hover:scale-110 active:scale-[0.95] duration-200 disabled:opacity-50"
           >
-            <X className="w-5 h-5 text-gray-400" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit} className="space-y-6 mb-6">
           {/* Name Input */}
-          <div className="animate-in fade-in slide-in-from-left-4 duration-300 delay-100">
-            <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-2">
+          <div className="space-y-2 animate-in fade-in slide-in-from-left-4 duration-300 delay-100">
+            <label htmlFor="name" className="block text-sm font-medium text-gray-300">
               Fächername
             </label>
             <input
+              id="name"
               type="text"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => {
+                setName(e.target.value);
+                setError('');
+              }}
               placeholder="z.B. Mathematik"
-              className="w-full text-sm bg-white/5 border border-white/10 rounded-lg px-3 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/25 transition-all transform hover:scale-[1.01] duration-200"
               disabled={isLoading}
-              autoFocus
+              className="w-full text-base bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/25 transition-all"
             />
           </div>
 
-          {/* Type Select */}
-          <div className="animate-in fade-in slide-in-from-left-4 duration-300 delay-150">
-            <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-2">
+          {/* Type Selection */}
+          <div className="space-y-2 animate-in fade-in slide-in-from-left-4 duration-300 delay-150">
+            <label className="block text-sm font-medium text-gray-300">
               Fachtyp
             </label>
             <div className="grid grid-cols-2 gap-3">
-              {['HAUPTFACH', 'NEBENFACH'].map((t, idx) => (
+              {['HAUPTFACH', 'NEBENFACH'].map((t) => (
                 <button
                   key={t}
                   type="button"
                   onClick={() => setType(t as 'HAUPTFACH' | 'NEBENFACH')}
-                  className={`py-2.5 px-3 rounded-lg font-medium text-xs sm:text-sm transition-all border transform hover:scale-105 active:scale-[0.95] duration-200 animate-in fade-in zoom-in-95 ${
+                  disabled={isLoading}
+                  className={`py-3 px-4 rounded-lg font-medium text-sm transition-all border transform hover:scale-105 active:scale-[0.95] duration-200 disabled:opacity-50 ${
                     type === t
                       ? 'bg-gradient-to-r from-blue-500/20 to-purple-500/20 border-blue-500/50 text-blue-200'
-                      : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10 hover:border-white/20'
+                      : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'
                   }`}
-                  disabled={isLoading}
-                  style={{ animationDelay: `${150 + idx * 50}ms` }}
                 >
                   {t === 'HAUPTFACH' ? 'Hauptfach' : 'Nebenfach'}
                 </button>
@@ -125,9 +125,9 @@ export default function AddSubjectDialog({
             </div>
           </div>
 
-          {/* Color Picker */}
-          <div className="animate-in fade-in slide-in-from-left-4 duration-300 delay-200">
-            <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-3">
+          {/* Color Selection */}
+          <div className="space-y-2 animate-in fade-in slide-in-from-left-4 duration-300 delay-200">
+            <label className="block text-sm font-medium text-gray-300">
               Farbe
             </label>
             <div className="grid grid-cols-6 gap-2">
@@ -136,7 +136,8 @@ export default function AddSubjectDialog({
                   key={c}
                   type="button"
                   onClick={() => setColor(c)}
-                  className={`aspect-square rounded-lg border-2 transition-all transform text-xs animate-in zoom-in-75 ${
+                  disabled={isLoading}
+                  className={`aspect-square rounded-lg border-2 transition-all transform animate-in zoom-in-75 disabled:opacity-50 ${
                     color === c
                       ? 'border-white scale-110 shadow-lg shadow-white/20'
                       : 'border-transparent hover:scale-105'
@@ -145,7 +146,6 @@ export default function AddSubjectDialog({
                     backgroundColor: c,
                     animationDelay: `${200 + (idx % 6) * 20}ms`,
                   }}
-                  disabled={isLoading}
                   title={c}
                 />
               ))}
@@ -154,27 +154,27 @@ export default function AddSubjectDialog({
 
           {/* Error Message */}
           {error && (
-            <div className="bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2 text-xs sm:text-sm text-red-300 animate-in shake duration-300">
+            <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-300 text-sm animate-in fade-in shake duration-300">
               {error}
             </div>
           )}
 
-          {/* Buttons */}
-          <div className="flex gap-3 pt-4 flex-col sm:flex-row animate-in fade-in slide-in-from-bottom-4 duration-300 delay-300">
+          {/* Action Buttons */}
+          <div className="flex gap-3 flex-col sm:flex-row pt-2 animate-in fade-in slide-in-from-bottom-4 duration-300 delay-300">
             <button
               type="button"
-              onClick={onClose}
-              className="flex-1 px-4 py-2.5 sm:py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-gray-300 font-medium text-sm transition-all transform hover:scale-[1.02] active:scale-[0.98] duration-200"
+              onClick={handleClose}
               disabled={isLoading}
+              className="flex-1 px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-gray-300 font-medium text-base transition-all transform hover:scale-[1.02] active:scale-[0.98] duration-200 disabled:opacity-50"
             >
               Abbrechen
             </button>
             <button
               type="submit"
-              className="flex-1 px-4 py-2.5 sm:py-3 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 rounded-lg text-white font-medium text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02] active:scale-[0.98] duration-200"
               disabled={isLoading || !name.trim()}
+              className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 rounded-lg text-white font-medium text-base transition-all disabled:opacity-50 transform hover:scale-[1.02] active:scale-[0.98] duration-200"
             >
-              {isLoading ? 'Wird hinzugefügt...' : 'Hinzufügen'}
+              {isLoading ? 'Wird hinzugefügt...' : 'Fach hinzufügen'}
             </button>
           </div>
         </form>
