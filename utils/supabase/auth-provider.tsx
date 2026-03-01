@@ -10,6 +10,7 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const SESSION_STORAGE_KEY = 'sb_auth_session';
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -18,21 +19,56 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const supabase = createClient();
 
   useEffect(() => {
-    // Prüfe die aktuelle Session beim Mount
+    let isMounted = true;
+
     const initializeAuth = async () => {
       try {
+        // Versuche zuerst, die Session aus der Middleware/Cookies zu laden
         const { data: { session }, error } = await supabase.auth.getSession();
         
-        if (error) throw error;
-        
-        setSession(session);
-        setUser(session?.user ?? null);
+        if (isMounted) {
+          if (session) {
+            setSession(session);
+            setUser(session?.user ?? null);
+            // Speichere die Session im localStorage als Backup
+            if (typeof window !== 'undefined') {
+              localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify({
+                session,
+                timestamp: Date.now(),
+              }));
+            }
+          } else {
+            // Falls keine Session in Cookies, versuche localStorage zu laden
+            if (typeof window !== 'undefined') {
+              const stored = localStorage.getItem(SESSION_STORAGE_KEY);
+              if (stored) {
+                try {
+                  const { session: savedSession } = JSON.parse(stored);
+                  setSession(savedSession);
+                  setUser(savedSession?.user ?? null);
+                } catch (e) {
+                  console.error('Failed to parse stored session:', e);
+                  setSession(null);
+                  setUser(null);
+                  localStorage.removeItem(SESSION_STORAGE_KEY);
+                }
+              } else {
+                setSession(null);
+                setUser(null);
+              }
+            }
+          }
+        }
       } catch (error) {
         console.error('Auth initialization error:', error);
-        setSession(null);
-        setUser(null);
+        if (isMounted) {
+          setSession(null);
+          setUser(null);
+        }
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
 
@@ -41,12 +77,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Überwache Auth-Änderungen
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
+        if (isMounted) {
+          setSession(session);
+          setUser(session?.user ?? null);
+          
+          // Speichere jeden Auth-Change
+          if (typeof window !== 'undefined') {
+            if (session) {
+              localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify({
+                session,
+                timestamp: Date.now(),
+              }));
+            } else {
+              localStorage.removeItem(SESSION_STORAGE_KEY);
+            }
+          }
+        }
       }
     );
 
     return () => {
+      isMounted = false;
       subscription?.unsubscribe();
     };
   }, [supabase]);

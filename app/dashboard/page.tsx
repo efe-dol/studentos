@@ -181,6 +181,9 @@ export default function Dashboard() {
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('sb_auth_session');
+    }
     router.push('/login');
   };
 
