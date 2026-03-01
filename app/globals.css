@@ -135,12 +135,41 @@ button, a, input {
   position: relative;
 }
 .field input,
+.field textarea,
+.field select,
 .field input[type="date"] {
   width: 100%;
   background: transparent;
   border: 1px solid rgba(255,255,255,0.06);
   max-width: 100%;
   box-sizing: border-box;
+  color: white;
+}
+
+/* Custom select styling */
+.field select {
+  background: linear-gradient(to bottom, rgba(26, 26, 26, 0.95), rgba(15, 15, 15, 0.95));
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23888' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 36px;
+}
+
+.field select:hover {
+  border-color: rgba(255,255,255,0.15);
+}
+
+.field select:focus {
+  border-color: rgba(59, 130, 246, 0.5);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.field select option {
+  background: #1a1a1a;
+  color: white;
+  padding: 8px;
 }
 
 /* Fix for date input on iPad */
@@ -156,13 +185,34 @@ button, a, input {
   pointer-events: none;
   transition: all 180ms ease-out;
   font-size: 14px;
+  background: transparent;
+  padding: 0 4px;
+  z-index: 1;
 }
-.field input:focus + label,
-.field input:not(:placeholder-shown) + label {
+
+/* Adjust label position for select */
+.field select + label {
   top: -8px;
   transform: none;
   font-size: 12px;
   color: rgba(255,255,255,0.85);
+  background: linear-gradient(to bottom, transparent 0%, transparent 40%, #1a1a1a 40%, #1a1a1a 60%, transparent 60%, transparent 100%);
+}
+
+/* Adjust label position for textarea */
+.field textarea + label {
+  top: 20px;
+}
+
+.field input:focus + label,
+.field textarea:focus + label,
+.field input:not(:placeholder-shown) + label,
+.field textarea:not(:placeholder-shown) + label {
+  top: -8px;
+  transform: none;
+  font-size: 12px;
+  color: rgba(255,255,255,0.85);
+  background: linear-gradient(to bottom, transparent 0%, transparent 40%, #1a1a1a 40%, #1a1a1a 60%, transparent 60%, transparent 100%);
 }
 
 /* subtle glass border for card */
@@ -335,6 +385,22 @@ button, a, input {
   opacity: 0;
 }
 
+@keyframes appointmentItemIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.appointment-item-animate {
+  opacity: 0;
+  animation: appointmentItemIn 0.35s ease-out forwards;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .bg-pulse { animation: none; }
   .decor-circle { animation: none; }
@@ -344,4 +410,5 @@ button, a, input {
   .gradient-animate { animation: none; }
   .card-stagger-1, .card-stagger-2, .card-stagger-3, .card-stagger-4, .card-stagger-5 { animation: none; opacity: 1; }
   .content-fade-in { animation: none; }
+  .appointment-item-animate { animation: none; opacity: 1; }
 }

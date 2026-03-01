@@ -16,6 +16,12 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "StudentOS",
   description: "Gymnasium Weilheim i.OB - Deine zentrale Plattform",
+  manifest: '/manifest.webmanifest',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'StudentOS',
+  },
 };
 
 export const viewport: Viewport = {
