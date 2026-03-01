@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import AuthBackground from '@/app/components/common/AuthBackground';
+import LoadingScreen from '@/app/components/common/LoadingScreen';
 import Toast from '@/app/components/common/Toast';
 import { Shield, AlertTriangle, Plus, Trash2, Edit as EditIcon, X, ArrowLeft } from 'lucide-react';
 
@@ -176,11 +177,7 @@ export default function AdminPage() {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-[#0a0a0a] via-[#121212] to-[#1a1a1a] flex items-center justify-center">
-        <div className="text-white">Lädt...</div>
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   if (!isAdmin) {

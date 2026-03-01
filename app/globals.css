@@ -401,6 +401,49 @@ button, a, input {
   animation: appointmentItemIn 0.35s ease-out forwards;
 }
 
+/* Loading Screen Animations */
+@keyframes loadingProgress {
+  0% {
+    width: 0;
+  }
+  50% {
+    width: 100%;
+  }
+  100% {
+    width: 100%;
+  }
+}
+
+@keyframes pulseSlow {
+  0%, 100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+@keyframes pulseSlower {
+  0%, 100% {
+    opacity: 0.2;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-loading-progress {
+  animation: loadingProgress 1.5s ease-in-out infinite;
+}
+
+.animate-pulse-slow {
+  animation: pulseSlow 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.animate-pulse-slower {
+  animation: pulseSlower 5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .bg-pulse { animation: none; }
   .decor-circle { animation: none; }

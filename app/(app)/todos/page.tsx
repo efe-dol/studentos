@@ -243,11 +243,7 @@ export default function TodosPage() {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-[#0a0a0a] via-[#121212] to-[#1a1a1a] flex items-center justify-center">
-        <div className="text-white">Lädt...</div>
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   const incompleteTodos = todos.filter(t => !t.is_completed);
