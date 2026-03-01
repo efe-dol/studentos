@@ -33,11 +33,12 @@ html, body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
   height: 100%;
   width: 100%;
-  position: fixed;
-  overscroll-behavior: none;
+  position: relative;
+  overscroll-behavior-y: contain;
   touch-action: pan-y pan-x;
   -webkit-overflow-scrolling: touch;
 }
@@ -401,6 +402,36 @@ button, a, input {
   animation: appointmentItemIn 0.35s ease-out forwards;
 }
 
+/* Toast Animations */
+@keyframes toastSlideOut {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-12px) scale(0.98);
+  }
+}
+
+@keyframes toastShimmer {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(120%);
+  }
+}
+
+@keyframes toastProgress {
+  from {
+    width: 100%;
+  }
+  to {
+    width: 0%;
+  }
+}
+
 /* Loading Screen Animations */
 @keyframes loadingProgress {
   0% {
@@ -454,4 +485,7 @@ button, a, input {
   .card-stagger-1, .card-stagger-2, .card-stagger-3, .card-stagger-4, .card-stagger-5 { animation: none; opacity: 1; }
   .content-fade-in { animation: none; }
   .appointment-item-animate { animation: none; opacity: 1; }
+  .animate-\[toastSlideOut_0\.28s_ease-in_forwards\] { animation: none; }
+  .animate-\[toastShimmer_1\.8s_ease-in-out_infinite\] { animation: none; }
+  .animate-\[toastProgress_linear_forwards\] { animation: none; width: 0; }
 }

@@ -301,23 +301,24 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#0a0a0a] via-[#121212] to-[#1a1a1a] text-white">
+    <div className="fixed inset-0 bg-gradient-to-b from-[#0a0a0a] via-[#121212] to-[#1a1a1a] text-white flex flex-col overflow-hidden">
       <AuthBackground />
 
-      <div className="relative z-10 max-w-5xl mx-auto px-6 py-8">
-        {/* Header */}
-        <div className="flex items-center gap-4 mb-8 card-stagger-1">
-          <button
-            onClick={() => router.push('/dashboard')}
-            className="p-2 rounded-lg hover:bg-white/10 transition-all border border-white/10 hover:scale-105"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <h1 className="text-4xl font-bold">Einstellungen</h1>
-        </div>
+      <div className="relative z-10 flex-1 max-w-5xl w-full mx-auto px-6 pt-6 pb-24 flex flex-col overflow-hidden">
+        <div className="sticky top-0 z-30 backdrop-blur-xl bg-[#0d0d0d]/70 rounded-b-2xl pb-5">
+          {/* Header */}
+          <div className="flex items-center gap-4 mb-5 card-stagger-1 pt-2">
+            <button
+              onClick={() => router.push('/dashboard')}
+              className="p-2 rounded-lg hover:bg-white/10 transition-all border border-white/10 hover:scale-105"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+            <h1 className="text-4xl font-bold">Einstellungen</h1>
+          </div>
 
           {/* Tab Navigation */}
-          <div className="flex gap-3 mb-8 flex-wrap card-stagger-2">
+          <div className="flex gap-3 flex-wrap card-stagger-2">
             <button
               onClick={() => setActiveTab('profile')}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all border hover:scale-105 ${
@@ -352,6 +353,9 @@ export default function SettingsPage() {
               Benachrichtigungen
             </button>
           </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto pt-6 pb-8">
 
           {/* Profile Tab */}
           {activeTab === 'profile' && (
@@ -555,6 +559,7 @@ export default function SettingsPage() {
               <span className="text-gray-400 group-hover:text-white transition-colors">→</span>
             </button>
           </div>
+        </div>
       </div>
 
       {/* Toast Notification */}

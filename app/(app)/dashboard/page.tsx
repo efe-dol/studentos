@@ -47,6 +47,24 @@ type Appointment = {
   created_at: string;
 };
 
+type HomeworkSubject = {
+  id: string;
+  name: string;
+  color: string;
+  type: 'HAUPTFACH' | 'NEBENFACH';
+};
+
+type HomeworkItem = {
+  id: string;
+  task: string;
+  homework_date: string;
+  due_date: string;
+  priority: 'low' | 'medium' | 'high' | 'urgent';
+  created_at: string;
+  subject_id: string;
+  subjects?: HomeworkSubject[];
+};
+
 type GradeEntry = {
   id: string;
   grade: number;
@@ -70,6 +88,8 @@ export default function Dashboard() {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [grades, setGrades] = useState<GradeEntry[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [homework, setHomework] = useState<HomeworkItem[]>([]);
+  const [homeworkSubjects, setHomeworkSubjects] = useState<HomeworkSubject[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
   const [maintenanceMessages, setMaintenanceMessages] = useState<MaintenanceMessage[]>([]);
   const [dismissedMessages, setDismissedMessages] = useState<Set<string>>(new Set());
@@ -82,6 +102,13 @@ export default function Dashboard() {
   const [appointmentColor, setAppointmentColor] = useState('#3b82f6');
   const [editingAppointmentId, setEditingAppointmentId] = useState<string | null>(null);
   const [savingAppointment, setSavingAppointment] = useState(false);
+  const [homeworkTask, setHomeworkTask] = useState('');
+  const [homeworkDate, setHomeworkDate] = useState(new Date().toISOString().split('T')[0]);
+  const [homeworkDueDate, setHomeworkDueDate] = useState('');
+  const [homeworkPriority, setHomeworkPriority] = useState<'low' | 'medium' | 'high' | 'urgent'>('medium');
+  const [homeworkSubjectId, setHomeworkSubjectId] = useState('');
+  const [savingHomework, setSavingHomework] = useState(false);
+  const [deletingHomeworkId, setDeletingHomeworkId] = useState<string | null>(null);
   const [pushSupported, setPushSupported] = useState(false);
   const [pushSubscribed, setPushSubscribed] = useState(false);
   const [pushLoading, setPushLoading] = useState(false);
@@ -135,6 +162,102 @@ export default function Dashboard() {
       setAppointments(data.appointments || []);
     } catch (error) {
       console.error('Error fetching appointments:', error);
+    }
+  };
+
+  const fetchHomework = async (limit = 5) => {
+    try {
+      const response = await fetch(`/api/homework?limit=${limit}`);
+      if (!response.ok) {
+        return;
+      }
+
+      const data = await response.json();
+      setHomework(data.homework || []);
+    } catch (error) {
+      console.error('Error fetching homework:', error);
+    }
+  };
+
+  const fetchHomeworkSubjects = async () => {
+    try {
+      const response = await fetch('/api/subjects');
+      if (!response.ok) {
+        return;
+      }
+
+      const data = await response.json();
+      const loadedSubjects = Array.isArray(data) ? data : [];
+      setHomeworkSubjects(loadedSubjects);
+
+      if (loadedSubjects.length > 0 && !homeworkSubjectId) {
+        setHomeworkSubjectId(loadedSubjects[0].id);
+      }
+    } catch (error) {
+      console.error('Error fetching homework subjects:', error);
+    }
+  };
+
+  const resetHomeworkForm = () => {
+    setHomeworkTask('');
+    setHomeworkDate(new Date().toISOString().split('T')[0]);
+    setHomeworkDueDate('');
+    setHomeworkPriority('medium');
+  };
+
+  const handleCreateHomework = async () => {
+    if (!homeworkTask.trim() || !homeworkDate || !homeworkDueDate || !homeworkPriority || !homeworkSubjectId) {
+      setToast({ message: 'Bitte alle Hausaufgaben-Felder ausfüllen', type: 'error' });
+      return;
+    }
+
+    setSavingHomework(true);
+    try {
+      const response = await fetch('/api/homework', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          task: homeworkTask.trim(),
+          homework_date: homeworkDate,
+          due_date: homeworkDueDate,
+          priority: homeworkPriority,
+          subject_id: homeworkSubjectId,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Fehler beim Erstellen der Hausaufgabe');
+      }
+
+      await fetchHomework(activeTab === 'homework' ? 100 : 5);
+      resetHomeworkForm();
+      setToast({ message: 'Hausaufgabe erstellt!', type: 'success' });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unbekannter Fehler';
+      setToast({ message, type: 'error' });
+    } finally {
+      setSavingHomework(false);
+    }
+  };
+
+  const handleDeleteHomework = async (id: string) => {
+    setDeletingHomeworkId(id);
+    try {
+      const response = await fetch(`/api/homework/${id}`, { method: 'DELETE' });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Fehler beim Löschen der Hausaufgabe');
+      }
+
+      setHomework((prev) => prev.filter((item) => item.id !== id));
+      setToast({ message: 'Hausaufgabe gelöscht', type: 'success' });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unbekannter Fehler';
+      setToast({ message, type: 'error' });
+    } finally {
+      setDeletingHomeworkId(null);
     }
   };
 
@@ -451,6 +574,9 @@ export default function Dashboard() {
         // Fetch appointments
         await fetchAppointments(5);
 
+        // Fetch homework preview for dashboard
+        await fetchHomework(5);
+
         // Fetch maintenance messages
         try {
           const response = await fetch('/api/maintenance');
@@ -487,6 +613,11 @@ export default function Dashboard() {
   useEffect(() => {
     if (activeTab === 'appointments') {
       fetchAppointments(100);
+    }
+
+    if (activeTab === 'homework') {
+      fetchHomework(100);
+      fetchHomeworkSubjects();
     }
   }, [activeTab]);
 
@@ -525,6 +656,13 @@ export default function Dashboard() {
   const upcomingAppointments = appointments
     .filter((appointment) => new Date(appointment.starts_at).getTime() >= Date.now())
     .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime());
+
+  const nowStartOfDay = new Date();
+  nowStartOfDay.setHours(0, 0, 0, 0);
+
+  const upcomingHomework = homework
+    .filter((item) => new Date(item.due_date).getTime() >= nowStartOfDay.getTime())
+    .sort((a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime());
 
   const gradeCount = grades.length;
   const weightedAverage =
@@ -583,6 +721,7 @@ export default function Dashboard() {
   })();
 
   const previewAppointments = upcomingAppointments.slice(0, 5);
+  const previewHomework = upcomingHomework.slice(0, 5);
 
   if (loading) {
     return <LoadingScreen />;
@@ -685,18 +824,25 @@ export default function Dashboard() {
             <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-6 card-stagger-2">
               <h2 className="text-xl font-semibold mb-4 flex items-center gap-2"><BookOpen className="w-5 h-5" /> Hausaufgaben</h2>
               <div className="space-y-3">
-                {[
-                  { subject: 'Deutsch', task: 'S. 145-150', due: 'Morgen' },
-                  { subject: 'Physik', task: 'Aufgaben 1-5', due: 'Übermorgen' },
-                  { subject: 'Geographie', task: 'Karte anfertigen', due: 'Freitag' },
-                ].map((hw, i) => (
-                  <div key={i} className="p-3 rounded-lg bg-white/5 border border-white/10">
-                    <p className="text-sm font-medium">{hw.subject}</p>
-                    <p className="text-xs text-gray-400 mt-1">{hw.task}</p>
-                    <p className="text-xs text-orange-400 mt-1">Fällig: {hw.due}</p>
+                {previewHomework.length === 0 ? (
+                  <p className="text-sm text-gray-400">Keine anstehenden Hausaufgaben</p>
+                ) : (
+                  previewHomework.map((item) => (
+                  <div key={item.id} className="p-3 rounded-lg bg-white/5 border border-white/10">
+                    <p className="text-sm font-medium">{item.subjects?.[0]?.name || 'Fach'}</p>
+                    <p className="text-xs text-gray-400 mt-1 line-clamp-2">{item.task}</p>
+                    <p className="text-xs text-orange-400 mt-1">
+                      Fällig: {new Date(item.due_date).toLocaleDateString('de-DE')}
+                    </p>
                   </div>
-                ))}
+                )))}
               </div>
+              <button
+                onClick={() => setActiveTab('homework')}
+                className="w-full mt-4 py-2 px-3 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 transition-all text-sm"
+              >
+                Hausaufgaben verwalten
+              </button>
             </div>
 
             {/* Notendurchschnitt */}
@@ -1020,8 +1166,114 @@ export default function Dashboard() {
         )}
 
         {activeTab === 'homework' && (
-          <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-8 text-center content-fade-in">
-            <p className="text-gray-400">Hausaufgaben - Seite noch in Bearbeitung</p>
+          <div className="content-fade-in">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-1 backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-5 h-fit">
+                <h2 className="text-lg font-semibold mb-4">Neue Hausaufgabe</h2>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2 text-gray-300">Fach</label>
+                    <select
+                      value={homeworkSubjectId}
+                      onChange={(event) => setHomeworkSubjectId(event.target.value)}
+                      className="w-full p-3 rounded-xl bg-white/5 border border-white/10 focus:border-cyan-500 focus:outline-none text-sm"
+                    >
+                      <option value="">Fach wählen</option>
+                      {homeworkSubjects.map((subject) => (
+                        <option key={subject.id} value={subject.id}>
+                          {subject.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-2 text-gray-300">Aufgabe</label>
+                    <textarea
+                      value={homeworkTask}
+                      onChange={(event) => setHomeworkTask(event.target.value)}
+                      rows={4}
+                      placeholder="z.B. Kapitel 3 zusammenfassen"
+                      className="w-full p-3 rounded-xl bg-white/5 border border-white/10 focus:border-cyan-500 focus:outline-none text-sm resize-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-2 text-gray-300">Fällig am</label>
+                    <input
+                      type="date"
+                      value={homeworkDueDate}
+                      onChange={(event) => setHomeworkDueDate(event.target.value)}
+                      className="w-full p-3 rounded-xl bg-white/5 border border-white/10 focus:border-cyan-500 focus:outline-none text-sm"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-2 text-gray-300">Priorität</label>
+                    <select
+                      value={homeworkPriority}
+                      onChange={(event) => setHomeworkPriority(event.target.value as HomeworkItem['priority'])}
+                      className="w-full p-3 rounded-xl bg-white/5 border border-white/10 focus:border-cyan-500 focus:outline-none text-sm"
+                    >
+                      <option value="niedrig">Niedrig</option>
+                      <option value="mittel">Mittel</option>
+                      <option value="hoch">Hoch</option>
+                    </select>
+                  </div>
+
+                  <button
+                    onClick={handleCreateHomework}
+                    disabled={savingHomework}
+                    className="w-full py-3 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 text-white font-medium hover:from-cyan-500 hover:to-blue-500 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    {savingHomework ? 'Wird gespeichert...' : 'Hausaufgabe hinzufügen'}
+                  </button>
+                </div>
+              </div>
+
+              <div className="lg:col-span-2 backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-semibold">Anstehende Hausaufgaben</h2>
+                  <span className="text-xs px-2 py-1 rounded-full bg-white/10 text-gray-300">
+                    {upcomingHomework.length} offen
+                  </span>
+                </div>
+
+                {upcomingHomework.length === 0 ? (
+                  <div className="p-6 rounded-xl bg-white/5 border border-white/10 text-center text-gray-400 text-sm">
+                    Keine anstehenden Hausaufgaben.
+                  </div>
+                ) : (
+                  <div className="space-y-3 max-h-[62vh] overflow-y-auto pr-1">
+                    {upcomingHomework.map((item) => (
+                      <div key={item.id} className="p-4 rounded-xl bg-white/5 border border-white/10">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium mb-1">{item.subjects?.[0]?.name || 'Fach'}</p>
+                            <p className="text-sm text-gray-300 break-words">{item.task}</p>
+                            <div className="flex items-center gap-2 mt-2 text-xs text-gray-400 flex-wrap">
+                              <span>Fällig: {new Date(item.due_date).toLocaleDateString('de-DE')}</span>
+                              <span className="px-2 py-0.5 rounded-full bg-white/10">
+                                Priorität: {item.priority}
+                              </span>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => handleDeleteHomework(item.id)}
+                            disabled={deletingHomeworkId === item.id}
+                            className="shrink-0 p-2 rounded-lg bg-red-500/15 text-red-300 hover:bg-red-500/25 transition-colors disabled:opacity-60"
+                            aria-label="Hausaufgabe löschen"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         )}
       </div>
