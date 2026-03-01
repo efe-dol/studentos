@@ -38,6 +38,18 @@ html, body {
   width: 100%;
   position: fixed;
   overscroll-behavior: none;
+  touch-action: pan-y pan-x;
+}
+
+/* Prevent text selection except for inputs */
+* {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+input, textarea {
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 /* Hide scrollbars globally but keep scrolling functionality */
