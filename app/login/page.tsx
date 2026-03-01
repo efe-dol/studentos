@@ -100,13 +100,10 @@ export default function Login() {
         </div>
 
         {/* Divider with OR */}
-        <div className="relative my-6">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-white/10"></div>
-          </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="px-4 bg-transparent text-gray-500">ODER</span>
-          </div>
+        <div className="flex items-center my-6 gap-4">
+          <div className="flex-1 border-t border-white/10"></div>
+          <span className="text-sm text-gray-500">ODER</span>
+          <div className="flex-1 border-t border-white/10"></div>
         </div>
 
         {/* Register Button */}
