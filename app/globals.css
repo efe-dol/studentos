@@ -39,6 +39,17 @@ html, body {
   position: fixed;
   overscroll-behavior: none;
   touch-action: pan-y pan-x;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Hardware acceleration for better performance */
+* {
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  -webkit-perspective: 1000;
+  perspective: 1000;
 }
 
 /* Prevent text selection except for inputs */
@@ -68,7 +79,14 @@ input, textarea {
 }
 
 button, a, input {
-  transition: all 0.2s ease-out;
+  transition: all 0.15s ease-out;
+  will-change: transform;
+}
+
+/* Optimize backdrop-blur for performance */
+.backdrop-blur-xl {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
 /* custom animations - optimized for speed */

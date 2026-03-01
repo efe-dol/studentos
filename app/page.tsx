@@ -21,19 +21,20 @@ export default function Home() {
   }, [router]);
 
   return (
-    <div className="min-h-screen h-screen bg-gradient-to-b from-[#0a0a0a] via-[#121212] to-[#1a1a1a] text-white overflow-y-auto overflow-x-hidden">
+    <div className="min-h-screen h-screen bg-gradient-to-b from-[#0a0a0a] via-[#121212] to-[#1a1a1a] text-white overflow-y-auto overflow-x-hidden" style={{ willChange: 'scroll-position' }}>
       <AuthBackground />
 
       {/* Hero Section */}
       <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-6 py-20">
         <div
-          className={`max-w-4xl mx-auto text-center space-y-8 transition-all duration-500 ease-out ${
-            visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
+          className={`max-w-4xl mx-auto text-center space-y-8 transition-opacity duration-300 ease-out ${
+            visible ? 'opacity-100' : 'opacity-0'
           }`}
+          style={{ willChange: 'opacity' }}
         >
           {/* Logo/Title */}
           <div className="space-y-4">
-            <h1 className="text-6xl md:text-7xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent animate-pulse">
+            <h1 className="text-6xl md:text-7xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
               StudentOS
             </h1>
             <p className="text-xl md:text-2xl text-gray-300">
@@ -50,11 +51,12 @@ export default function Home() {
 
         {/* Installation Guide */}
         <div
-          className={`max-w-3xl mx-auto mt-20 transition-all duration-500 delay-100 ease-out ${
-            visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
+          className={`max-w-3xl mx-auto mt-20 transition-opacity duration-300 ease-out ${
+            visible ? 'opacity-100' : 'opacity-0'
           }`}
+          style={{ willChange: 'opacity' }}
         >
-          <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-8">
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-8">
             <h2 className="text-3xl font-semibold mb-6 text-center">
               📱 App Installation (Safari/iOS)
             </h2>
@@ -64,12 +66,12 @@ export default function Home() {
 
             <div className="space-y-6">
               {/* Step 1 */}
-              <div className="flex gap-4 p-4 rounded-xl bg-white/5 hover:bg-white/10 transition-all group">
+              <div className="flex gap-4 p-4 rounded-xl bg-white/5 active:bg-white/10 transition-colors">
                 <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center font-bold text-lg">
                   1
                 </div>
                 <div>
-                  <h3 className="font-semibold text-lg mb-2 group-hover:text-blue-400 transition-colors">
+                  <h3 className="font-semibold text-lg mb-2">
                     Safari öffnen
                   </h3>
                   <p className="text-gray-400 text-sm">
@@ -79,12 +81,12 @@ export default function Home() {
               </div>
 
               {/* Step 2 */}
-              <div className="flex gap-4 p-4 rounded-xl bg-white/5 hover:bg-white/10 transition-all group">
+              <div className="flex gap-4 p-4 rounded-xl bg-white/5 active:bg-white/10 transition-colors">
                 <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center font-bold text-lg">
                   2
                 </div>
                 <div>
-                  <h3 className="font-semibold text-lg mb-2 group-hover:text-purple-400 transition-colors">
+                  <h3 className="font-semibold text-lg mb-2">
                     Teilen-Button tippen
                   </h3>
                   <p className="text-gray-400 text-sm">
@@ -95,12 +97,12 @@ export default function Home() {
               </div>
 
               {/* Step 3 */}
-              <div className="flex gap-4 p-4 rounded-xl bg-white/5 hover:bg-white/10 transition-all group">
+              <div className="flex gap-4 p-4 rounded-xl bg-white/5 active:bg-white/10 transition-colors">
                 <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-r from-pink-500 to-red-500 flex items-center justify-center font-bold text-lg">
                   3
                 </div>
                 <div>
-                  <h3 className="font-semibold text-lg mb-2 group-hover:text-pink-400 transition-colors">
+                  <h3 className="font-semibold text-lg mb-2">
                     Zum Home-Bildschirm
                   </h3>
                   <p className="text-gray-400 text-sm">
@@ -111,12 +113,12 @@ export default function Home() {
               </div>
 
               {/* Step 4 */}
-              <div className="flex gap-4 p-4 rounded-xl bg-white/5 hover:bg-white/10 transition-all group">
+              <div className="flex gap-4 p-4 rounded-xl bg-white/5 active:bg-white/10 transition-colors">
                 <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-r from-green-500 to-emerald-500 flex items-center justify-center font-bold text-lg">
                   4
                 </div>
                 <div>
-                  <h3 className="font-semibold text-lg mb-2 group-hover:text-green-400 transition-colors">
+                  <h3 className="font-semibold text-lg mb-2">
                     Fertig!
                   </h3>
                   <p className="text-gray-400 text-sm">
@@ -138,16 +140,17 @@ export default function Home() {
 
         {/* Features Preview */}
         <div
-          className={`max-w-5xl mx-auto mt-20 transition-all duration-500 delay-150 ease-out ${
-            visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
+          className={`max-w-5xl mx-auto mt-20 transition-opacity duration-300 ease-out ${
+            visible ? 'opacity-100' : 'opacity-0'
           }`}
+          style={{ willChange: 'opacity' }}
         >
           <h2 className="text-3xl font-semibold mb-10 text-center">
             ✨ Features
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Feature 1 */}
-            <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-all transform hover:scale-105">
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-6 active:bg-white/10 transition-colors">
               <div className="text-4xl mb-4">📚</div>
               <h3 className="text-xl font-semibold mb-2">Stundenplan</h3>
               <p className="text-gray-400 text-sm">
@@ -156,7 +159,7 @@ export default function Home() {
             </div>
 
             {/* Feature 2 */}
-            <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-all transform hover:scale-105">
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-6 active:bg-white/10 transition-colors">
               <div className="text-4xl mb-4">✏️</div>
               <h3 className="text-xl font-semibold mb-2">Hausaufgaben</h3>
               <p className="text-gray-400 text-sm">
@@ -165,7 +168,7 @@ export default function Home() {
             </div>
 
             {/* Feature 3 */}
-            <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-all transform hover:scale-105">
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-6 active:bg-white/10 transition-colors">
               <div className="text-4xl mb-4">📊</div>
               <h3 className="text-xl font-semibold mb-2">Noten</h3>
               <p className="text-gray-400 text-sm">
