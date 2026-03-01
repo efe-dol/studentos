@@ -172,7 +172,7 @@ export default function SubjectListSettings() {
                       <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
                           onClick={() => handleEditSubject(subject)}
-                          className="p-2 hover:bg-blue-500/20 rounded text-blue-300 transition-colors hover:scale-110 duration-200"
+                          className="p-2 hover:bg-blue-500/20 rounded text-blue-300 transition-all hover:scale-110 hover:-translate-y-0.5 duration-200"
                           title="Bearbeiten"
                         >
                           <Edit2 className="w-4 h-4" />
@@ -218,7 +218,7 @@ export default function SubjectListSettings() {
                       <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
                           onClick={() => handleEditSubject(subject)}
-                          className="p-2 hover:bg-blue-500/20 rounded text-blue-300 transition-colors hover:scale-110 duration-200"
+                          className="p-2 hover:bg-blue-500/20 rounded text-blue-300 transition-all hover:scale-110 hover:-translate-y-0.5 duration-200"
                           title="Bearbeiten"
                         >
                           <Edit2 className="w-4 h-4" />
@@ -252,14 +252,14 @@ export default function SubjectListSettings() {
 
       {/* Edit Dialog */}
       {editState.isOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-          <div className="bg-gradient-to-br from-[#1a1a1a] to-[#0d0d0d] rounded-2xl shadow-2xl p-7 max-w-md w-full border border-white/5 max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-300">
-            <h2 className="text-xl sm:text-2xl font-bold text-white mb-6 animate-in fade-in slide-in-from-top-4 duration-300">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 modal-backdrop-animate">
+          <div className="bg-gradient-to-br from-[#1a1a1a] to-[#0d0d0d] rounded-2xl shadow-2xl p-7 max-w-md w-full border border-white/5 max-h-[90vh] overflow-y-auto modal-animate">
+            <h2 className="text-xl sm:text-2xl font-bold text-white mb-6 modal-field-1">
               Fach bearbeiten
             </h2>
 
             <div className="space-y-5 mb-6">
-              <div className="animate-in fade-in slide-in-from-left-4 duration-300 delay-100">
+              <div className="modal-field-2">
                 <label className="block text-sm font-medium text-gray-300 mb-2">
                   Fächername
                 </label>
@@ -272,7 +272,7 @@ export default function SubjectListSettings() {
                 />
               </div>
 
-              <div className="animate-in fade-in slide-in-from-left-4 duration-300 delay-150">
+              <div className="modal-field-3">
                 <label className="block text-sm font-medium text-gray-300 mb-2">
                   Fachtyp
                 </label>
@@ -295,7 +295,7 @@ export default function SubjectListSettings() {
                 </div>
               </div>
 
-              <div className="animate-in fade-in slide-in-from-left-4 duration-300 delay-200">
+              <div className="modal-field-4">
                 <label className="block text-sm font-medium text-gray-300 mb-2">
                   Farbe
                 </label>
@@ -320,7 +320,7 @@ export default function SubjectListSettings() {
               </div>
             </div>
 
-            <div className="flex gap-3 flex-col sm:flex-row animate-in fade-in slide-in-from-bottom-4 duration-300 delay-300">
+            <div className="flex gap-3 flex-col sm:flex-row modal-buttons-animate">
               <button
                 onClick={() => setEditState({ isOpen: false, name: '', type: 'HAUPTFACH', color: '#3b82f6' })}
                 className="flex-1 px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-gray-300 font-medium text-base transition-all transform hover:scale-[1.02] active:scale-[0.98] duration-200"

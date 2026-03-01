@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import AuthBackground from '@/app/components/common/AuthBackground';
@@ -12,12 +12,33 @@ export default function Register() {
   const [lastName, setLastName] = useState('');
   const [className, setClassName] = useState('');
   const [birthdate, setBirthdate] = useState('');
+  const [maintenanceMode, setMaintenanceMode] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const supabase = createClient();
   const router = useRouter();
 
+  useEffect(() => {
+    const loadMaintenanceMode = async () => {
+      try {
+        const response = await fetch('/api/maintenance-mode');
+        if (!response.ok) return;
+        const data = await response.json();
+        setMaintenanceMode(Boolean(data.maintenanceMode));
+      } catch {
+        setMaintenanceMode(false);
+      }
+    };
+
+    loadMaintenanceMode();
+  }, []);
+
   const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    if (maintenanceMode) {
+      setToast({ message: 'Registrierung ist im Wartungsmodus gesperrt.', type: 'error' });
+      return;
+    }
 
     if (!email || !password || !firstName || !lastName || !className || !birthdate) {
       setToast({ message: 'Bitte alle Felder ausfüllen!', type: 'error' });
@@ -87,6 +108,13 @@ export default function Register() {
             Erstelle einen Account, um mit StudentOS zu starten
           </p>
         </div>
+
+        {maintenanceMode && (
+          <div className="w-full max-w-xl mb-6 rounded-xl border border-red-500/40 bg-red-500/15 p-4 text-red-200 animate-[fadeIn_0.35s_ease-out]">
+            <p className="font-semibold">Wartungsmodus aktiv</p>
+            <p className="text-sm text-red-100/90 mt-1">Die Registrierseite ist aktuell gesperrt.</p>
+          </div>
+        )}
 
         {/* Form Box */}
         <form
@@ -167,7 +195,8 @@ export default function Register() {
         <div className="mt-6">
           <button
             type="submit"
-            className="w-full py-3 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white font-semibold shadow-lg hover:scale-[1.01] active:scale-95 transition-all duration-200 backdrop-blur-sm"
+            disabled={maintenanceMode}
+            className="w-full py-3 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white font-semibold shadow-lg hover:scale-[1.01] active:scale-95 transition-all duration-200 backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Registrieren
           </button>

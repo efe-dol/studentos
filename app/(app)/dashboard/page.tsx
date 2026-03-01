@@ -54,6 +54,8 @@ type HomeworkSubject = {
   type: 'HAUPTFACH' | 'NEBENFACH';
 };
 
+type SubjectRelation = HomeworkSubject | HomeworkSubject[] | null;
+
 type HomeworkItem = {
   id: string;
   task: string;
@@ -62,7 +64,20 @@ type HomeworkItem = {
   priority: 'low' | 'medium' | 'high' | 'urgent';
   created_at: string;
   subject_id: string;
-  subjects?: HomeworkSubject[];
+  subjects?: SubjectRelation;
+};
+
+type ScheduleEntry = {
+  id: string;
+  weekday: 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday';
+  start_time: string;
+  end_time: string;
+  room: string | null;
+  teacher: string | null;
+  created_at: string;
+  is_break?: boolean;
+  subject_id: string | null;
+  subjects?: SubjectRelation;
 };
 
 type GradeEntry = {
@@ -81,6 +96,24 @@ const GRADE_BUCKETS = [
   { key: 6, label: '6', color: '#1e40af' },
 ] as const;
 
+const WEEKDAY_LABELS: Record<ScheduleEntry['weekday'], string> = {
+  monday: 'Montag',
+  tuesday: 'Dienstag',
+  wednesday: 'Mittwoch',
+  thursday: 'Donnerstag',
+  friday: 'Freitag',
+};
+
+const WEEKDAY_ORDER: ScheduleEntry['weekday'][] = [
+  'monday',
+  'tuesday',
+  'wednesday',
+  'thursday',
+  'friday',
+];
+
+const SCHEDULE_BREAK_OPTION = '__break__';
+
 export default function Dashboard() {
   const FIXED_SCHOOL_NAME = 'Gymnasium Weilheim i.OB';
   const [user, setUser] = useState<User | null>(null);
@@ -90,6 +123,7 @@ export default function Dashboard() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [homework, setHomework] = useState<HomeworkItem[]>([]);
   const [homeworkSubjects, setHomeworkSubjects] = useState<HomeworkSubject[]>([]);
+  const [scheduleEntries, setScheduleEntries] = useState<ScheduleEntry[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
   const [maintenanceMessages, setMaintenanceMessages] = useState<MaintenanceMessage[]>([]);
   const [dismissedMessages, setDismissedMessages] = useState<Set<string>>(new Set());
@@ -109,6 +143,17 @@ export default function Dashboard() {
   const [homeworkSubjectId, setHomeworkSubjectId] = useState('');
   const [savingHomework, setSavingHomework] = useState(false);
   const [deletingHomeworkId, setDeletingHomeworkId] = useState<string | null>(null);
+  const [scheduleWeekday, setScheduleWeekday] = useState<ScheduleEntry['weekday']>('monday');
+  const [scheduleStartTime, setScheduleStartTime] = useState('');
+  const [scheduleEndTime, setScheduleEndTime] = useState('');
+  const [scheduleSubjectId, setScheduleSubjectId] = useState('');
+  const [scheduleRoom, setScheduleRoom] = useState('');
+  const [scheduleTeacher, setScheduleTeacher] = useState('');
+  const [savingSchedule, setSavingSchedule] = useState(false);
+  const [deletingScheduleId, setDeletingScheduleId] = useState<string | null>(null);
+  const [scheduleEditMode, setScheduleEditMode] = useState(false);
+  const [showScheduleForm, setShowScheduleForm] = useState(false);
+  const [scheduleFormAnimated, setScheduleFormAnimated] = useState(false);
   const [pushSupported, setPushSupported] = useState(false);
   const [pushSubscribed, setPushSubscribed] = useState(false);
   const [pushLoading, setPushLoading] = useState(false);
@@ -125,6 +170,29 @@ export default function Dashboard() {
     const firstName = extractFirstName(value);
     if (!firstName) return '';
     return firstName.charAt(0).toUpperCase() + firstName.slice(1).toLowerCase();
+  };
+
+  const getRelatedSubject = (relation?: SubjectRelation) => {
+    if (!relation) return undefined;
+    if (Array.isArray(relation)) return relation[0];
+    return relation;
+  };
+
+  const formatScheduleTime = (timeValue?: string | null) => {
+    if (!timeValue) return '--:--';
+
+    const cleaned = String(timeValue).trim();
+    const hhmmMatch = cleaned.match(/^(\d{2}):(\d{2})/);
+    if (hhmmMatch) {
+      return `${hhmmMatch[1]}:${hhmmMatch[2]}`;
+    }
+
+    const parsed = new Date(cleaned);
+    if (!Number.isNaN(parsed.getTime())) {
+      return parsed.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    return cleaned;
   };
 
   const getFallbackFirstName = (
@@ -193,8 +261,110 @@ export default function Dashboard() {
       if (loadedSubjects.length > 0 && !homeworkSubjectId) {
         setHomeworkSubjectId(loadedSubjects[0].id);
       }
+
+      if (loadedSubjects.length > 0 && !scheduleSubjectId) {
+        setScheduleSubjectId(loadedSubjects[0].id);
+      }
     } catch (error) {
       console.error('Error fetching homework subjects:', error);
+    }
+  };
+
+  const fetchScheduleEntries = async () => {
+    try {
+      const response = await fetch('/api/schedule');
+      if (!response.ok) {
+        return;
+      }
+
+      const data = await response.json();
+      const loadedEntries = data.schedule || [];
+      setScheduleEntries(loadedEntries);
+    } catch (error) {
+      console.error('Error fetching schedule entries:', error);
+    }
+  };
+
+  const resetScheduleForm = () => {
+    setScheduleWeekday('monday');
+    setScheduleStartTime('');
+    setScheduleEndTime('');
+    setScheduleRoom('');
+    setScheduleTeacher('');
+  };
+
+  const handleCreateScheduleEntry = async () => {
+    if (!scheduleEditMode) {
+      setToast({ message: 'Aktiviere den Bearbeitungsmodus zum Eintragen', type: 'error' });
+      return;
+    }
+
+    const isBreak = scheduleSubjectId === SCHEDULE_BREAK_OPTION;
+
+    if (!scheduleWeekday || !scheduleStartTime || !scheduleEndTime || (!scheduleSubjectId && !isBreak)) {
+      setToast({ message: 'Bitte Wochentag, Zeitraum und Fach auswählen', type: 'error' });
+      return;
+    }
+
+    if (scheduleStartTime >= scheduleEndTime) {
+      setToast({ message: 'Die Startzeit muss vor der Endzeit liegen', type: 'error' });
+      return;
+    }
+
+    setSavingSchedule(true);
+    try {
+      const response = await fetch('/api/schedule', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          weekday: scheduleWeekday,
+          start_time: scheduleStartTime,
+          end_time: scheduleEndTime,
+          is_break: isBreak,
+          subject_id: isBreak ? null : scheduleSubjectId,
+          room: scheduleRoom,
+          teacher: scheduleTeacher,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Fehler beim Speichern des Stundenplan-Eintrags');
+      }
+
+      await fetchScheduleEntries();
+      resetScheduleForm();
+      setToast({ message: 'Stundenplan-Eintrag gespeichert', type: 'success' });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unbekannter Fehler';
+      setToast({ message, type: 'error' });
+    } finally {
+      setSavingSchedule(false);
+    }
+  };
+
+  const handleDeleteScheduleEntry = async (id: string) => {
+    if (!scheduleEditMode) {
+      setToast({ message: 'Löschen ist nur im Bearbeitungsmodus möglich', type: 'error' });
+      return;
+    }
+
+    setDeletingScheduleId(id);
+    try {
+      const response = await fetch(`/api/schedule/${id}`, { method: 'DELETE' });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Fehler beim Löschen des Stundenplan-Eintrags');
+      }
+
+      setScheduleEntries((prev) => prev.filter((entry) => entry.id !== id));
+      setToast({ message: 'Stundenplan-Eintrag gelöscht', type: 'success' });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unbekannter Fehler';
+      setToast({ message, type: 'error' });
+    } finally {
+      setDeletingScheduleId(null);
     }
   };
 
@@ -619,11 +789,36 @@ export default function Dashboard() {
       fetchHomework(100);
       fetchHomeworkSubjects();
     }
+
+    if (activeTab === 'schedule') {
+      fetchScheduleEntries();
+      fetchHomeworkSubjects();
+    }
   }, [activeTab]);
 
   useEffect(() => {
     initializePushState();
   }, []);
+
+  useEffect(() => {
+    if (scheduleEditMode) {
+      setShowScheduleForm(true);
+
+      const frame = requestAnimationFrame(() => {
+        setScheduleFormAnimated(true);
+      });
+
+      return () => cancelAnimationFrame(frame);
+    }
+
+    setScheduleFormAnimated(false);
+
+    const timeout = setTimeout(() => {
+      setShowScheduleForm(false);
+    }, 320);
+
+    return () => clearTimeout(timeout);
+  }, [scheduleEditMode]);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -722,6 +917,19 @@ export default function Dashboard() {
 
   const previewAppointments = upcomingAppointments.slice(0, 5);
   const previewHomework = upcomingHomework.slice(0, 5);
+  const orderedScheduleEntries = [...scheduleEntries].sort((a, b) => {
+    const weekdayDelta = WEEKDAY_ORDER.indexOf(a.weekday) - WEEKDAY_ORDER.indexOf(b.weekday);
+    if (weekdayDelta !== 0) return weekdayDelta;
+    return a.start_time.localeCompare(b.start_time);
+  });
+
+  const groupedScheduleEntries = WEEKDAY_ORDER.map((weekday) => ({
+    weekday,
+    label: WEEKDAY_LABELS[weekday],
+    entries: orderedScheduleEntries.filter((entry) => entry.weekday === weekday),
+  }));
+  const selectedScheduleSubject = homeworkSubjects.find((subject) => subject.id === scheduleSubjectId);
+  const isBreakSelected = scheduleSubjectId === SCHEDULE_BREAK_OPTION;
 
   if (loading) {
     return <LoadingScreen />;
@@ -829,7 +1037,7 @@ export default function Dashboard() {
                 ) : (
                   previewHomework.map((item) => (
                   <div key={item.id} className="p-3 rounded-lg bg-white/5 border border-white/10">
-                    <p className="text-sm font-medium">{item.subjects?.[0]?.name || 'Fach'}</p>
+                    <p className="text-sm font-medium">{getRelatedSubject(item.subjects)?.name || 'Fach'}</p>
                     <p className="text-xs text-gray-400 mt-1 line-clamp-2">{item.task}</p>
                     <p className="text-xs text-orange-400 mt-1">
                       Fällig: {new Date(item.due_date).toLocaleDateString('de-DE')}
@@ -976,8 +1184,233 @@ export default function Dashboard() {
         )}
 
         {activeTab === 'schedule' && (
-          <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-8 text-center content-fade-in">
-            <p className="text-gray-400">Stundenplan - Seite noch in Bearbeitung</p>
+          <div className="content-fade-in animate-in fade-in duration-300 slide-in-from-bottom-2">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {showScheduleForm && (
+              <div
+                className={`lg:col-span-1 backdrop-blur-xl rounded-2xl h-fit overflow-hidden card-stagger-1 transition-all duration-320 [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] will-change-[opacity,transform,max-height] ${
+                  scheduleFormAnimated
+                    ? 'bg-white/5 border border-white/10 p-5 opacity-100 translate-y-0 scale-100 max-h-[900px]'
+                    : 'bg-white/0 border border-transparent p-0 opacity-0 -translate-y-3 scale-95 max-h-0 pointer-events-none'
+                }`}
+              >
+                <h2 className="text-lg font-semibold mb-4">Stundenplan-Eintrag</h2>
+
+                <div className="space-y-4">
+                  <div className="modal-field-1">
+                    <label className="block text-sm font-medium mb-2 text-gray-300">Wochentag</label>
+                    <select
+                      value={scheduleWeekday}
+                      onChange={(event) => setScheduleWeekday(event.target.value as ScheduleEntry['weekday'])}
+                      className="w-full p-3 rounded-xl bg-white/5 border border-white/10 focus:border-cyan-500 focus:outline-none text-sm"
+                      style={{ colorScheme: 'dark' }}
+                    >
+                      {WEEKDAY_ORDER.map((weekday) => (
+                        <option key={weekday} value={weekday} className="bg-black text-white">
+                          {WEEKDAY_LABELS[weekday]}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="modal-field-2">
+                    <p className="text-xs text-gray-400 mb-2">Zeitraum (von/bis)</p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <input
+                        type="time"
+                        value={scheduleStartTime}
+                        onChange={(event) => setScheduleStartTime(event.target.value)}
+                        aria-label="Startzeit"
+                        className="w-full p-3 rounded-xl bg-white/5 border border-white/10 focus:border-cyan-500 focus:outline-none text-sm"
+                      />
+                      <input
+                        type="time"
+                        value={scheduleEndTime}
+                        onChange={(event) => setScheduleEndTime(event.target.value)}
+                        aria-label="Endzeit"
+                        className="w-full p-3 rounded-xl bg-white/5 border border-white/10 focus:border-cyan-500 focus:outline-none text-sm"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="modal-field-3">
+                    <label className="block text-sm font-medium mb-2 text-gray-300">Fach</label>
+                    <select
+                      value={scheduleSubjectId}
+                      onChange={(event) => setScheduleSubjectId(event.target.value)}
+                      className="w-full p-3 rounded-xl bg-white/5 border border-white/10 focus:border-cyan-500 focus:outline-none text-sm"
+                      style={{ colorScheme: 'dark' }}
+                    >
+                      <option value="" className="bg-black text-white">Fach wählen</option>
+                      <option value={SCHEDULE_BREAK_OPTION} className="bg-black text-white">Pause</option>
+                      {homeworkSubjects.map((subject) => (
+                        <option key={subject.id} value={subject.id} className="bg-black text-white">
+                          {subject.name}
+                        </option>
+                      ))}
+                    </select>
+                    {scheduleSubjectId && (
+                      <div className="mt-2 flex items-center gap-2 text-xs text-gray-300">
+                        {isBreakSelected ? (
+                          <span className="w-2.5 h-2.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-cyan-400"></span>
+                        ) : (
+                          <span
+                            className="w-2.5 h-2.5 rounded-full"
+                            style={{
+                              backgroundColor: selectedScheduleSubject?.color || '#3b82f6',
+                            }}
+                          ></span>
+                        )}
+                        <span>
+                          {isBreakSelected ? 'Pause (Gradient)' : `Farbe: ${selectedScheduleSubject?.name || 'Fach'}`}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="modal-field-4">
+                    <label className="block text-sm font-medium mb-2 text-gray-300">Raum</label>
+                    <input
+                      type="text"
+                      value={scheduleRoom}
+                      onChange={(event) => setScheduleRoom(event.target.value)}
+                      placeholder="z.B. B204"
+                      className="w-full p-3 rounded-xl bg-white/5 border border-white/10 focus:border-cyan-500 focus:outline-none text-sm"
+                    />
+                  </div>
+
+                  <div className="modal-field-5">
+                    <label className="block text-sm font-medium mb-2 text-gray-300">Lehrkraft</label>
+                    <input
+                      type="text"
+                      value={scheduleTeacher}
+                      onChange={(event) => setScheduleTeacher(event.target.value)}
+                      placeholder="z.B. Frau Müller"
+                      className="w-full p-3 rounded-xl bg-white/5 border border-white/10 focus:border-cyan-500 focus:outline-none text-sm"
+                    />
+                  </div>
+
+                  <div className="modal-buttons-animate">
+                    <button
+                      onClick={handleCreateScheduleEntry}
+                      disabled={savingSchedule || homeworkSubjects.length === 0}
+                      className="w-full py-3 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 text-white font-medium hover:from-cyan-500 hover:to-blue-500 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                      {savingSchedule ? 'Wird gespeichert...' : 'Eintrag hinzufügen'}
+                    </button>
+                  </div>
+
+                  {homeworkSubjects.length === 0 && (
+                    <p className="text-xs text-amber-300">
+                      Bitte zuerst im Tab &quot;Fächer&quot; mindestens ein Fach anlegen.
+                    </p>
+                  )}
+                </div>
+              </div>
+              )}
+
+              <div className={`${showScheduleForm ? 'lg:col-span-2' : 'lg:col-span-3'} backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-5 card-stagger-2 transition-all duration-320 [transition-timing-function:cubic-bezier(0.22,1,0.36,1)]`}>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-semibold">Dein Stundenplan</h2>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs px-2 py-1 rounded-full bg-white/10 text-gray-300">
+                      {scheduleEntries.length} Einträge
+                    </span>
+                    <button
+                      onClick={() => setScheduleEditMode((prev) => !prev)}
+                      className={`text-xs px-3 py-1.5 rounded-lg border transition-all duration-320 [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] ${
+                        scheduleEditMode
+                          ? 'bg-blue-500/20 border-blue-400/40 text-blue-200 hover:bg-blue-500/30'
+                          : 'bg-white/5 border-white/15 text-gray-200 hover:bg-white/10'
+                      }`}
+                    >
+                      {scheduleEditMode ? 'Bearbeitungsmodus aktiv' : 'Bearbeitungsmodus'}
+                    </button>
+                  </div>
+                </div>
+
+                {scheduleEntries.length === 0 ? (
+                  <div className="p-6 rounded-xl bg-white/5 border border-white/10 text-center text-gray-400 text-sm">
+                    Noch keine Stundenplan-Einträge vorhanden.
+                  </div>
+                ) : (
+                  <div className="space-y-4 max-h-[62vh] overflow-y-auto pr-1">
+                    {groupedScheduleEntries.map((day, dayIndex) => (
+                      <div
+                        key={day.weekday}
+                        className="rounded-xl border border-white/10 bg-white/5 p-4 appointment-item-animate"
+                        style={{ animationDelay: `${Math.min(dayIndex * 60, 360)}ms` }}
+                      >
+                        <h3 className="text-sm font-semibold text-gray-200 mb-3">{day.label}</h3>
+
+                        {day.entries.length === 0 ? (
+                          <p className="text-xs text-gray-500">Keine Einträge</p>
+                        ) : (
+                          <div className="space-y-2">
+                            {day.entries.map((entry, entryIndex) => {
+                              const relatedSubject = getRelatedSubject(entry.subjects);
+                              const isBreakEntry = Boolean(entry.is_break);
+                              return (
+                              <div
+                                key={entry.id}
+                                className={`p-3 rounded-lg border appointment-item-animate ${
+                                  isBreakEntry
+                                    ? 'bg-gradient-to-r from-fuchsia-500/10 to-cyan-500/10 border-fuchsia-400/20'
+                                    : 'bg-black/20 border-white/10'
+                                }`}
+                                style={{ animationDelay: `${Math.min(entryIndex * 40, 280)}ms` }}
+                              >
+                                <div className="flex items-start justify-between gap-3">
+                                  <div className="min-w-0">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      {isBreakEntry ? (
+                                        <span className="w-2.5 h-2.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-cyan-400"></span>
+                                      ) : (
+                                        <span
+                                          className="w-2.5 h-2.5 rounded-full"
+                                          style={{ backgroundColor: relatedSubject?.color || '#3b82f6' }}
+                                        ></span>
+                                      )}
+                                      <p
+                                        className={`text-sm font-medium ${
+                                          isBreakEntry
+                                            ? 'bg-gradient-to-r from-fuchsia-300 to-cyan-300 bg-clip-text text-transparent'
+                                            : ''
+                                        }`}
+                                      >
+                                        {isBreakEntry ? 'Pause' : relatedSubject?.name || 'Fach'}
+                                      </p>
+                                    </div>
+                                    <p className="text-xs text-gray-300">
+                                      {formatScheduleTime(entry.start_time)} - {formatScheduleTime(entry.end_time)}
+                                    </p>
+                                    <div className="text-xs text-gray-400 mt-1 flex flex-wrap gap-3">
+                                      <span>Raum: {entry.room || '—'}</span>
+                                      <span>Lehrkraft: {entry.teacher || '—'}</span>
+                                    </div>
+                                  </div>
+                                  {scheduleEditMode && (
+                                    <button
+                                      onClick={() => handleDeleteScheduleEntry(entry.id)}
+                                      disabled={deletingScheduleId === entry.id}
+                                      className="shrink-0 p-2 rounded-lg bg-red-500/15 text-red-300 hover:bg-red-500/25 transition-colors disabled:opacity-60"
+                                      aria-label="Stundenplan-Eintrag löschen"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         )}
 
@@ -1168,27 +1601,28 @@ export default function Dashboard() {
         {activeTab === 'homework' && (
           <div className="content-fade-in">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-1 backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-5 h-fit">
+              <div className="lg:col-span-1 backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-5 h-fit card-stagger-1">
                 <h2 className="text-lg font-semibold mb-4">Neue Hausaufgabe</h2>
 
                 <div className="space-y-4">
-                  <div>
+                  <div className="modal-field-1">
                     <label className="block text-sm font-medium mb-2 text-gray-300">Fach</label>
                     <select
                       value={homeworkSubjectId}
                       onChange={(event) => setHomeworkSubjectId(event.target.value)}
                       className="w-full p-3 rounded-xl bg-white/5 border border-white/10 focus:border-cyan-500 focus:outline-none text-sm"
+                      style={{ colorScheme: 'dark' }}
                     >
-                      <option value="">Fach wählen</option>
+                      <option value="" className="bg-black text-white">Fach wählen</option>
                       {homeworkSubjects.map((subject) => (
-                        <option key={subject.id} value={subject.id}>
+                        <option key={subject.id} value={subject.id} className="bg-black text-white">
                           {subject.name}
                         </option>
                       ))}
                     </select>
                   </div>
 
-                  <div>
+                  <div className="modal-field-2">
                     <label className="block text-sm font-medium mb-2 text-gray-300">Aufgabe</label>
                     <textarea
                       value={homeworkTask}
@@ -1199,7 +1633,7 @@ export default function Dashboard() {
                     />
                   </div>
 
-                  <div>
+                  <div className="modal-field-3">
                     <label className="block text-sm font-medium mb-2 text-gray-300">Fällig am</label>
                     <input
                       type="date"
@@ -1209,30 +1643,34 @@ export default function Dashboard() {
                     />
                   </div>
 
-                  <div>
+                  <div className="modal-field-4">
                     <label className="block text-sm font-medium mb-2 text-gray-300">Priorität</label>
                     <select
                       value={homeworkPriority}
                       onChange={(event) => setHomeworkPriority(event.target.value as HomeworkItem['priority'])}
                       className="w-full p-3 rounded-xl bg-white/5 border border-white/10 focus:border-cyan-500 focus:outline-none text-sm"
+                      style={{ colorScheme: 'dark' }}
                     >
-                      <option value="niedrig">Niedrig</option>
-                      <option value="mittel">Mittel</option>
-                      <option value="hoch">Hoch</option>
+                      <option value="low" className="bg-black text-white">Niedrig</option>
+                      <option value="medium" className="bg-black text-white">Mittel</option>
+                      <option value="high" className="bg-black text-white">Hoch</option>
+                      <option value="urgent" className="bg-black text-white">Dringend</option>
                     </select>
                   </div>
 
-                  <button
-                    onClick={handleCreateHomework}
-                    disabled={savingHomework}
-                    className="w-full py-3 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 text-white font-medium hover:from-cyan-500 hover:to-blue-500 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
-                  >
-                    {savingHomework ? 'Wird gespeichert...' : 'Hausaufgabe hinzufügen'}
-                  </button>
+                  <div className="modal-buttons-animate">
+                    <button
+                      onClick={handleCreateHomework}
+                      disabled={savingHomework}
+                      className="w-full py-3 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 text-white font-medium hover:from-cyan-500 hover:to-blue-500 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                      {savingHomework ? 'Wird gespeichert...' : 'Hausaufgabe hinzufügen'}
+                    </button>
+                  </div>
                 </div>
               </div>
 
-              <div className="lg:col-span-2 backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-5">
+              <div className="lg:col-span-2 backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-5 card-stagger-2">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-lg font-semibold">Anstehende Hausaufgaben</h2>
                   <span className="text-xs px-2 py-1 rounded-full bg-white/10 text-gray-300">
@@ -1246,11 +1684,15 @@ export default function Dashboard() {
                   </div>
                 ) : (
                   <div className="space-y-3 max-h-[62vh] overflow-y-auto pr-1">
-                    {upcomingHomework.map((item) => (
-                      <div key={item.id} className="p-4 rounded-xl bg-white/5 border border-white/10">
+                    {upcomingHomework.map((item, index) => (
+                      <div
+                        key={item.id}
+                        className="p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all duration-300 hover:scale-[1.01] appointment-item-animate"
+                        style={{ animationDelay: `${Math.min(index * 70, 560)}ms` }}
+                      >
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0">
-                            <p className="text-sm font-medium mb-1">{item.subjects?.[0]?.name || 'Fach'}</p>
+                            <p className="text-sm font-medium mb-1">{getRelatedSubject(item.subjects)?.name || 'Fach'}</p>
                             <p className="text-sm text-gray-300 break-words">{item.task}</p>
                             <div className="flex items-center gap-2 mt-2 text-xs text-gray-400 flex-wrap">
                               <span>Fällig: {new Date(item.due_date).toLocaleDateString('de-DE')}</span>

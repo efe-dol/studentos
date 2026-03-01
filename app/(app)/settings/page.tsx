@@ -538,7 +538,7 @@ export default function SettingsPage() {
                   <Shield className="w-5 h-5 text-blue-400 group-hover:scale-110 transition-transform" />
                   <div>
                     <p className="font-medium text-white">Admin-Bereich</p>
-                    <p className="text-sm text-gray-400">Verwalte Wartungsmeldungen</p>
+                    <p className="text-sm text-gray-400">Wartungsmodus, Nutzerrechte und Wartungsmeldungen verwalten</p>
                   </div>
                 </div>
                 <span className="text-gray-400 group-hover:text-white transition-colors">→</span>

@@ -15,6 +15,8 @@ const SENSITIVE_API_PREFIXES = [
   '/api/notifications/process',
   '/api/push-subscriptions',
   '/api/admin/check',
+  '/api/admin/users',
+  '/api/maintenance-mode',
 ]
 
 const globalRateLimitStore =

@@ -64,6 +64,30 @@ input, textarea {
   user-select: text;
 }
 
+/* Fix distorted time-input text rendering (especially on Windows/WebKit) */
+input[type="time"] {
+  -webkit-transform: none !important;
+  transform: none !important;
+  -webkit-backface-visibility: visible;
+  backface-visibility: visible;
+  -webkit-perspective: none;
+  perspective: none;
+  font-family: "Segoe UI", Inter, ui-sans-serif, system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-feature-settings: "zero" 0, "tnum" 1;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+}
+
+input[type="time"]::-webkit-datetime-edit,
+input[type="time"]::-webkit-datetime-edit-fields-wrapper {
+  padding: 0;
+}
+
+input[type="time"]::-webkit-datetime-edit-hour-field,
+input[type="time"]::-webkit-datetime-edit-minute-field {
+  padding: 0 1px;
+}
+
 /* Hide scrollbars globally but keep scrolling functionality */
 * {
   scrollbar-width: none; /* Firefox */

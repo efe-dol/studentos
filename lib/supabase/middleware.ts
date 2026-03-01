@@ -2,7 +2,7 @@ import { type NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 
 export async function updateSession(request: NextRequest) {
-  let response = NextResponse.next({ request })
+  const response = NextResponse.next({ request })
 
   try {
     const supabase = createServerClient(
@@ -24,6 +24,62 @@ export async function updateSession(request: NextRequest) {
 
     // Erhalte die aktuelle Session
     const { data: { session } } = await supabase.auth.getSession()
+
+    let maintenanceMode = false
+    const { data: maintenanceSettings } = await supabase
+      .from('app_settings')
+      .select('maintenance_mode')
+      .eq('id', true)
+      .single()
+
+    maintenanceMode = Boolean(maintenanceSettings?.maintenance_mode)
+
+    let profile: { role?: 'user' | 'admin'; is_blocked?: boolean } | null = null
+    if (session?.user?.id) {
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('role, is_blocked')
+        .eq('id', session.user.id)
+        .single()
+
+      if (profileError && String(profileError.message || '').toLowerCase().includes('is_blocked')) {
+        const { data: fallbackProfile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', session.user.id)
+          .single()
+
+        profile = {
+          role: fallbackProfile?.role,
+          is_blocked: false,
+        }
+      } else {
+        profile = profileData
+      }
+    }
+
+    if (profile?.is_blocked) {
+      await supabase.auth.signOut()
+      const loginUrl = request.nextUrl.clone()
+      loginUrl.pathname = '/login'
+      loginUrl.searchParams.set('blocked', '1')
+      return NextResponse.redirect(loginUrl)
+    }
+
+    if (maintenanceMode && request.nextUrl.pathname === '/register') {
+      const loginUrl = request.nextUrl.clone()
+      loginUrl.pathname = '/login'
+      loginUrl.searchParams.set('maintenance', '1')
+      return NextResponse.redirect(loginUrl)
+    }
+
+    if (session && maintenanceMode && profile?.role !== 'admin') {
+      await supabase.auth.signOut()
+      const loginUrl = request.nextUrl.clone()
+      loginUrl.pathname = '/login'
+      loginUrl.searchParams.set('maintenance', '1')
+      return NextResponse.redirect(loginUrl)
+    }
 
     // Wenn auf protected routes und keine Session, redirect zu login
     if (!session && (request.nextUrl.pathname.startsWith('/dashboard') || request.nextUrl.pathname.startsWith('/auth'))) {

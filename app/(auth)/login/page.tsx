@@ -1,7 +1,7 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import AuthBackground from '@/app/components/common/AuthBackground';
 import Toast from '@/app/components/common/Toast';
 
@@ -9,9 +9,28 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [maintenanceMode, setMaintenanceMode] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const supabase = createClient();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const blockedByAdmin = searchParams.get('blocked') === '1';
+  const redirectedForMaintenance = searchParams.get('maintenance') === '1';
+
+  useEffect(() => {
+    const loadMaintenanceMode = async () => {
+      try {
+        const response = await fetch('/api/maintenance-mode');
+        if (!response.ok) return;
+        const data = await response.json();
+        setMaintenanceMode(Boolean(data.maintenanceMode));
+      } catch {
+        setMaintenanceMode(false);
+      }
+    };
+
+    loadMaintenanceMode();
+  }, []);
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -24,6 +43,45 @@ export default function Login() {
 
     if (error) {
       setToast({ message: error.message, type: 'error' });
+      setLoading(false);
+      return;
+    }
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    const { data: profileData, error: profileError } = await supabase
+      .from('profiles')
+      .select('role, is_blocked')
+      .eq('id', user?.id)
+      .single();
+
+    let profile = profileData as { role?: 'user' | 'admin'; is_blocked?: boolean } | null;
+
+    if (profileError && String(profileError.message || '').toLowerCase().includes('is_blocked')) {
+      const { data: fallbackProfile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user?.id)
+        .single();
+
+      profile = {
+        role: fallbackProfile?.role,
+        is_blocked: false,
+      };
+    }
+
+    if (profile?.is_blocked) {
+      await supabase.auth.signOut();
+      setToast({ message: 'Dein Konto wurde gesperrt. Kontaktiere einen Administrator.', type: 'error' });
+      setLoading(false);
+      return;
+    }
+
+    if (maintenanceMode && profile?.role !== 'admin') {
+      await supabase.auth.signOut();
+      setToast({ message: 'Wartungsmodus aktiv. Nur Admins können sich einloggen.', type: 'error' });
       setLoading(false);
       return;
     }
@@ -54,6 +112,24 @@ export default function Login() {
             Melde dich an, um auf StudentOS zuzugreifen
           </p>
         </div>
+
+        {maintenanceMode && (
+          <div className="w-full max-w-xl mb-6 rounded-xl border border-red-500/40 bg-red-500/15 p-4 text-red-200 animate-[fadeIn_0.35s_ease-out]">
+            <p className="font-semibold">Wartungsmodus aktiv</p>
+            <p className="text-sm text-red-100/90 mt-1">Aktuell können sich nur Administratoren einloggen.</p>
+          </div>
+        )}
+
+        {(blockedByAdmin || redirectedForMaintenance) && (
+          <div className="w-full max-w-xl mb-6 rounded-xl border border-red-500/40 bg-red-500/15 p-4 text-red-200 animate-[fadeIn_0.35s_ease-out]">
+            <p className="font-semibold">Zugriff eingeschränkt</p>
+            <p className="text-sm text-red-100/90 mt-1">
+              {blockedByAdmin
+                ? 'Dein Konto wurde gesperrt. Kontaktiere einen Administrator.'
+                : 'Wartungsmodus aktiv. Login aktuell nur für Administratoren möglich.'}
+            </p>
+          </div>
+        )}
 
         {/* Form Box */}
         <form
