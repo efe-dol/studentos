@@ -4,6 +4,7 @@ import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
 import AuthBackground from '@/app/components/AuthBackground';
 import Toast from '@/app/components/Toast';
+import { SubstitutionsView } from '@/app/components/SubstitutionsView';
 import { Settings, CheckSquare, BookOpen, BarChart3, Calendar, Zap, Edit, RefreshCw } from 'lucide-react';
 
 type User = {
@@ -32,6 +33,10 @@ export default function Dashboard() {
   const [editBirthdate, setEditBirthdate] = useState('');
   const [editSchool, setEditSchool] = useState('');
   const [savingProfile, setSavingProfile] = useState(false);
+  const [showElternportalSettings, setShowElternportalSettings] = useState(false);
+  const [elternportalEmail, setElternportalEmail] = useState('');
+  const [elternportalPassword, setElternportalPassword] = useState('');
+  const [savingElternportal, setSavingElternportal] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const supabase = createClient();
   const router = useRouter();
@@ -114,6 +119,36 @@ export default function Dashboard() {
     }
 
     setSavingProfile(false);
+  };
+
+  const handleSaveElternportalCredentials = async () => {
+    if (!elternportalEmail || !elternportalPassword) {
+      setToast({ message: 'Bitte alle Felder ausfüllen!', type: 'error' });
+      return;
+    }
+
+    setSavingElternportal(true);
+    try {
+      const response = await fetch('/api/save-elternportal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: elternportalEmail,
+          password: elternportalPassword,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Fehler beim Speichern');
+      }
+
+      setShowElternportalSettings(false);
+      setToast({ message: 'Elternportal-Zugangsdaten gespeichert!', type: 'success' });
+    } catch (error) {
+      setToast({ message: 'Fehler beim Speichern der Zugangsdaten', type: 'error' });
+    } finally {
+      setSavingElternportal(false);
+    }
   };
 
   useEffect(() => {
@@ -361,9 +396,7 @@ export default function Dashboard() {
         )}
 
         {activeTab === 'substitutions' && (
-          <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-8 text-center content-fade-in">
-            <p className="text-gray-400">Vertretungen - Seite noch in Bearbeitung</p>
-          </div>
+          <SubstitutionsView onSettingsClick={() => setShowEditModal(true)} />
         )}
       </div>
 
@@ -456,19 +489,77 @@ export default function Dashboard() {
               </div>
             </div>
 
+            <div className="flex gap-3 modal-buttons-animate flex-col">
+              <button
+                onClick={() => setShowElternportalSettings(true)}
+                className="w-full py-2 rounded-lg bg-purple-500/20 hover:bg-purple-500/30 border border-purple-400/50 text-purple-300 font-medium transition-all"
+              >
+                Elternportal-Zugangsdaten
+              </button>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowEditModal(false)}
+                  className="flex-1 py-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 text-white font-medium transition-all"
+                >
+                  Abbrechen
+                </button>
+                <button
+                  onClick={handleSaveProfile}
+                  disabled={savingProfile}
+                  className="flex-1 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white font-medium transition-all disabled:opacity-50"
+                >
+                  {savingProfile ? 'Speichern...' : 'Speichern'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Elternportal Settings Modal */}
+      {showElternportalSettings && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 modal-backdrop-animate">
+          <div className="bg-gradient-to-b from-[#1a1a1a] to-[#0f0f0f] border border-white/10 rounded-2xl p-8 max-w-md w-full modal-animate">
+            <h2 className="text-white text-2xl font-semibold mb-2">Elternportal-Zugang</h2>
+            <p className="text-gray-400 text-sm mb-6">Deine Anmeldedaten werden sicher verschlüsselt gespeichert.</p>
+
+            <div className="space-y-4 mb-6">
+              <div className="field modal-field-1">
+                <input
+                  className="focus-glow px-4 py-3 rounded-xl text-white placeholder-transparent w-full"
+                  type="email"
+                  placeholder=" "
+                  value={elternportalEmail}
+                  onChange={e => setElternportalEmail(e.target.value)}
+                />
+                <label>E-Mail</label>
+              </div>
+
+              <div className="field modal-field-2">
+                <input
+                  className="focus-glow px-4 py-3 rounded-xl text-white placeholder-transparent w-full"
+                  type="password"
+                  placeholder=" "
+                  value={elternportalPassword}
+                  onChange={e => setElternportalPassword(e.target.value)}
+                />
+                <label>Passwort</label>
+              </div>
+            </div>
+
             <div className="flex gap-3 modal-buttons-animate">
               <button
-                onClick={() => setShowEditModal(false)}
+                onClick={() => setShowElternportalSettings(false)}
                 className="flex-1 py-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 text-white font-medium transition-all"
               >
                 Abbrechen
               </button>
               <button
-                onClick={handleSaveProfile}
-                disabled={savingProfile}
-                className="flex-1 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white font-medium transition-all disabled:opacity-50"
+                onClick={handleSaveElternportalCredentials}
+                disabled={savingElternportal}
+                className="flex-1 py-2 rounded-lg bg-purple-500 hover:bg-purple-600 text-white font-medium transition-all disabled:opacity-50"
               >
-                {savingProfile ? 'Speichern...' : 'Speichern'}
+                {savingElternportal ? 'Speichern...' : 'Speichern'}
               </button>
             </div>
           </div>
