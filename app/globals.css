@@ -254,17 +254,11 @@ button, a, input {
   }
 }
 
-@keyframes cardStagger1 { animation: cardSlideIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s forwards; }
-@keyframes cardStagger2 { animation: cardSlideIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s forwards; }
-@keyframes cardStagger3 { animation: cardSlideIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.3s forwards; }
-@keyframes cardStagger4 { animation: cardSlideIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.4s forwards; }
-@keyframes cardStagger5 { animation: cardSlideIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.5s forwards; }
-
-.card-stagger-1 { opacity: 0; animation: cardStagger1; }
-.card-stagger-2 { opacity: 0; animation: cardStagger2; }
-.card-stagger-3 { opacity: 0; animation: cardStagger3; }
-.card-stagger-4 { opacity: 0; animation: cardStagger4; }
-.card-stagger-5 { opacity: 0; animation: cardStagger5; }
+.card-stagger-1 { opacity: 0; animation: cardSlideIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s forwards; }
+.card-stagger-2 { opacity: 0; animation: cardSlideIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s forwards; }
+.card-stagger-3 { opacity: 0; animation: cardSlideIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.3s forwards; }
+.card-stagger-4 { opacity: 0; animation: cardSlideIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.4s forwards; }
+.card-stagger-5 { opacity: 0; animation: cardSlideIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.5s forwards; }
 
 @keyframes contentFadeIn {
   from {
