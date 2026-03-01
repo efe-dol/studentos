@@ -21,7 +21,7 @@ export default function Home() {
   }, [router]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#0a0a0a] via-[#121212] to-[#1a1a1a] text-white overflow-x-hidden">
+    <div className="min-h-screen h-screen bg-gradient-to-b from-[#0a0a0a] via-[#121212] to-[#1a1a1a] text-white overflow-y-auto overflow-x-hidden">
       <AuthBackground />
 
       {/* Hero Section */}
