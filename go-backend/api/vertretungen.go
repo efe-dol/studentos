@@ -1,8 +1,16 @@
 package handler
 
 import (
+	"crypto/tls"
 	"encoding/json"
+	"fmt"
+	"io"
+	"log"
 	"net/http"
+	"net/http/cookiejar"
+	"net/url"
+	"regexp"
+	"strings"
 	"time"
 )
 
@@ -35,6 +43,182 @@ type Response struct {
 	Stand  string          `json:"stand"`
 }
 
+// ElternportalClient handles login and scraping
+type ElternportalClient struct {
+	httpClient *http.Client
+	email      string
+	password   string
+}
+
+// NewClient creates a new elternportal client
+func NewElternportalClient(email, password string) *ElternportalClient {
+	jar, _ := cookiejar.New(nil)
+	transport := &http.Transport{
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: true,
+		},
+	}
+
+	return &ElternportalClient{
+		httpClient: &http.Client{
+			Transport: transport,
+			Jar:       jar,
+		},
+		email:    email,
+		password: password,
+	}
+}
+
+// Login authenticates with elternportal
+func (c *ElternportalClient) Login() error {
+	log.Printf("Attempting login for: %s", c.email)
+
+	// Step 1: Get CSRF token from login page
+	req, _ := http.NewRequest("GET", "https://weilgym.eltern-portal.org/", nil)
+	req.Header.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
+	req.Header.Add("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
+
+	res, err := c.httpClient.Do(req)
+	if err != nil {
+		log.Printf("Login GET request failed: %v", err)
+		return err
+	}
+	defer res.Body.Close()
+
+	body, _ := io.ReadAll(res.Body)
+	bodyStr := string(body)
+
+	// Extract CSRF Token
+	csrfRegex := regexp.MustCompile(`csrf'\s+value='([^']+)'`)
+	matches := csrfRegex.FindStringSubmatch(bodyStr)
+	if len(matches) < 2 {
+		log.Printf("CSRF token not found in response")
+		return fmt.Errorf("CSRF token not found")
+	}
+	csrfToken := matches[1]
+	log.Printf("CSRF Token extracted")
+
+	// Step 2: Login with credentials
+	loginURL := "https://weilgym.eltern-portal.org/includes/project/auth/login.php"
+	payload := fmt.Sprintf("csrf=%s&username=%s&password=%s&go_to=",
+		csrfToken,
+		url.QueryEscape(c.email),
+		url.QueryEscape(c.password))
+
+	req, _ = http.NewRequest("POST", loginURL, strings.NewReader(payload))
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
+	req.Header.Add("Origin", "https://weilgym.eltern-portal.org")
+	req.Header.Add("Referer", "https://weilgym.eltern-portal.org/")
+
+	res, err = c.httpClient.Do(req)
+	if err != nil {
+		log.Printf("Login POST request failed: %v", err)
+		return err
+	}
+	defer res.Body.Close()
+
+	log.Printf("Login successful, response status: %d", res.StatusCode)
+	return nil
+}
+
+// GetVertretungsplan fetches the substitution plan
+func (c *ElternportalClient) GetVertretungsplan() (Response, error) {
+	// Login first
+	if err := c.Login(); err != nil {
+		return Response{}, err
+	}
+
+	// Fetch Vertretungsplan
+	req, _ := http.NewRequest("GET", "https://weilgym.eltern-portal.org/service/vertretungsplan", nil)
+	req.Header.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
+	req.Header.Add("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
+	req.Header.Add("Referer", "https://weilgym.eltern-portal.org/start")
+
+	res, err := c.httpClient.Do(req)
+	if err != nil {
+		log.Printf("Vertretungsplan request failed: %v", err)
+		return Response{}, err
+	}
+	defer res.Body.Close()
+
+	body, _ := io.ReadAll(res.Body)
+	bodyStr := string(body)
+
+	var plan Response
+
+	// Parse MOTD for today and tomorrow
+	motdRegex := regexp.MustCompile(`<p class="pull-left">([^<]+)</p>`)
+	motds := motdRegex.FindAllStringSubmatch(bodyStr, -1)
+	if len(motds) >= 1 {
+		plan.Heute.MOTD = strings.TrimSpace(motds[0][1])
+	}
+	if len(motds) >= 2 {
+		plan.Morgen.MOTD = strings.TrimSpace(motds[1][1])
+	}
+
+	// Parse substitution tables
+	tableRegex := regexp.MustCompile(`<table[^>]*class="table"[^>]*>(.*?)</table>`)
+	tables := tableRegex.FindAllStringSubmatch(bodyStr, -1)
+
+	var allVertretungen []Vertretung
+	tableIndex := 0
+
+	for _, tableMatch := range tables {
+		tableContent := tableMatch[1]
+
+		// Parse table rows
+		rowRegex := regexp.MustCompile(`<tr[^>]*>(.*?)</tr>`)
+		rows := rowRegex.FindAllStringSubmatch(tableContent, -1)
+
+		allVertretungen = []Vertretung{}
+
+		for i, rowMatch := range rows {
+			if i == 0 { // Skip header
+				continue
+			}
+
+			rowContent := rowMatch[1]
+			cellRegex := regexp.MustCompile(`<td[^>]*>([^<]*)</td>`)
+			cells := cellRegex.FindAllStringSubmatch(rowContent, -1)
+
+			if len(cells) >= 6 {
+				v := Vertretung{
+					Stunde:     strings.TrimSpace(cells[0][1]),
+					Betrifft:   strings.TrimSpace(cells[1][1]),
+					Vertretung: strings.TrimSpace(cells[2][1]),
+					Fach:       strings.TrimSpace(cells[3][1]),
+					Raum:       strings.TrimSpace(cells[4][1]),
+					Info:       strings.TrimSpace(cells[5][1]),
+				}
+
+				if v.Stunde != "Std." && v.Stunde != "" {
+					allVertretungen = append(allVertretungen, v)
+				}
+			}
+		}
+
+		if tableIndex == 0 {
+			plan.Heute.Vertretungen = allVertretungen
+		} else if tableIndex == 1 {
+			plan.Morgen.Vertretungen = allVertretungen
+		}
+		tableIndex++
+	}
+
+	// Parse Stand
+	standRegex := regexp.MustCompile(`<div[^>]*class="list[^>]*">Stand:\s+([^<]+)</div>`)
+	standMatch := standRegex.FindStringSubmatch(bodyStr)
+	if len(standMatch) > 1 {
+		plan.Stand = strings.TrimSpace(standMatch[1])
+	}
+
+	log.Printf("Successfully parsed vertretungsplan: %d heute, %d morgen",
+		len(plan.Heute.Vertretungen), len(plan.Morgen.Vertretungen))
+
+	return plan, nil
+}
+
 // Handler is the Vercel serverless function
 func Handler(w http.ResponseWriter, r *http.Request) {
 	// CORS headers
@@ -49,7 +233,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		return
 	}
-	
+
 	// Handle GET (health check)
 	if r.Method == "GET" {
 		w.WriteHeader(http.StatusOK)
@@ -66,6 +250,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	// Parse credentials
 	var creds Credentials
 	if err := json.NewDecoder(r.Body).Decode(&creds); err != nil {
+		log.Printf("Error decoding credentials: %v", err)
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
@@ -76,46 +261,34 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: Implement actual Elternportal API call here
-	// For now, return mock data
-	response := Response{
-		Heute: Vertretungsplan{
-			MOTD: "Backend nicht erreichbar - Mock Daten",
-			Vertretungen: []Vertretung{
-				{
-					Stunde:     "3",
-					Betrifft:   "10a",
-					Vertretung: "Müller",
-					Fach:       "Mathematik",
-					Raum:       "A201",
-					Info:       "Selbststudium",
-				},
-				{
-					Stunde:     "5",
-					Betrifft:   "10a",
-					Fach:       "Englisch",
-					Vertretung: "Schmidt",
-					Raum:       "B105",
-					Info:       "",
-				},
+	log.Printf("Fetching vertretungsplan for: %s", creds.Email)
+
+	// Create elternportal client with real credentials
+	client := NewElternportalClient(creds.Email, creds.Password)
+
+	// Fetch real data from elternportal
+	vertretungen, err := client.GetVertretungsplan()
+	if err != nil {
+		log.Printf("Elternportal error: %v", err)
+
+		// Fallback to error message
+		response := Response{
+			Heute: Vertretungsplan{
+				MOTD:         fmt.Sprintf("Fehler beim Abrufen: %v", err),
+				Vertretungen: []Vertretung{},
 			},
-		},
-		Morgen: Vertretungsplan{
-			MOTD: "Bitte Go-Backend starten",
-			Vertretungen: []Vertretung{
-				{
-					Stunde:     "2",
-					Betrifft:   "10a",
-					Vertretung: "Weber",
-					Fach:       "Deutsch",
-					Raum:       "A103",
-					Info:       "Entfall",
-				},
+			Morgen: Vertretungsplan{
+				MOTD:         "Bitte versuche es später erneut",
+				Vertretungen: []Vertretung{},
 			},
-		},
-		Stand: time.Now().Format("02.01.2006 15:04"),
+			Stand: time.Now().Format("02.01.2006 15:04"),
+		}
+		json.NewEncoder(w).Encode(response)
+		return
 	}
 
+	log.Printf("Successfully fetched vertretungsplan")
+
 	// Send response
-	json.NewEncoder(w).Encode(response)
+	json.NewEncoder(w).Encode(vertretungen)
 }
