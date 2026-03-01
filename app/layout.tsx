@@ -17,6 +17,14 @@ export const metadata: Metadata = {
   title: "StudentOS",
   description: "Gymnasium Weilheim i.OB - Deine zentrale Plattform",
   manifest: '/manifest.webmanifest',
+  icons: {
+    icon: [
+      { url: '/icon', type: 'image/png', sizes: '512x512' },
+      { url: '/favicon.ico' },
+    ],
+    shortcut: [{ url: '/icon', type: 'image/png', sizes: '512x512' }],
+    apple: [{ url: '/apple-icon', type: 'image/png', sizes: '180x180' }],
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
