@@ -99,13 +99,24 @@ export default function Login() {
           </button>
         </div>
 
-        <div className="mt-4 text-center">
-          <p className="text-gray-400 text-sm">
-            Hast du noch keinen Account?{' '}
-            <a href="/register" className="text-white/70 hover:text-white transition-colors">
-              Hier registrieren
-            </a>
-          </p>
+        {/* Divider with OR */}
+        <div className="relative my-6">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-white/10"></div>
+          </div>
+          <div className="relative flex justify-center text-sm">
+            <span className="px-4 bg-gradient-to-b from-[#1a1a1a] to-[#0f0f0f] text-gray-400">ODER</span>
+          </div>
+        </div>
+
+        {/* Register Button */}
+        <div className="mt-4">
+          <a
+            href="/register"
+            className="w-full py-3 rounded-xl border border-white/20 text-gray-300 hover:text-white hover:bg-white/5 font-medium transition-all duration-200 flex items-center justify-center"
+          >
+            Neuen Account erstellen
+          </a>
         </div>
       </form>
       </div>

@@ -173,13 +173,24 @@ export default function Register() {
           </button>
         </div>
 
-        <div className="mt-4 text-center">
-          <p className="text-gray-400 text-sm">
-            Du hast bereits einen Account?{' '}
-            <a href="/login" className="text-white/70 hover:text-white transition-colors">
-              Hier anmelden
-            </a>
-          </p>
+        {/* Divider with OR */}
+        <div className="relative my-6">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-white/10"></div>
+          </div>
+          <div className="relative flex justify-center text-sm">
+            <span className="px-4 bg-gradient-to-b from-[#1a1a1a] to-[#0f0f0f] text-gray-400">ODER</span>
+          </div>
+        </div>
+
+        {/* Login Button */}
+        <div className="mt-4">
+          <a
+            href="/login"
+            className="w-full py-3 rounded-xl border border-white/20 text-gray-300 hover:text-white hover:bg-white/5 font-medium transition-all duration-200 flex items-center justify-center"
+          >
+            Bereits registriert? Anmelden
+          </a>
         </div>
       </form>
       </div>
