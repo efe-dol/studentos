@@ -395,12 +395,12 @@ export default function Dashboard() {
 
       {/* Edit Profile Modal */}
       {showEditModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-gradient-to-b from-[#1a1a1a] to-[#0f0f0f] border border-white/10 rounded-2xl p-8 max-w-md w-full max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 modal-backdrop-animate">
+          <div className="bg-gradient-to-b from-[#1a1a1a] to-[#0f0f0f] border border-white/10 rounded-2xl p-8 max-w-md w-full max-h-[90vh] overflow-y-auto modal-animate">
             <h2 className="text-white text-2xl font-semibold mb-6">Profil bearbeiten</h2>
 
             <div className="space-y-4 mb-6">
-              <div className="field">
+              <div className="field modal-field-1">
                 <input
                   className="focus-glow px-4 py-3 rounded-xl text-white placeholder-transparent w-full"
                   type="text"
@@ -411,7 +411,7 @@ export default function Dashboard() {
                 <label>Vorname</label>
               </div>
 
-              <div className="field">
+              <div className="field modal-field-2">
                 <input
                   className="focus-glow px-4 py-3 rounded-xl text-white placeholder-transparent w-full"
                   type="text"
@@ -422,7 +422,7 @@ export default function Dashboard() {
                 <label>Nachname</label>
               </div>
 
-              <div className="field">
+              <div className="field modal-field-3">
                 <input
                   className="focus-glow px-4 py-3 rounded-xl text-white placeholder-transparent w-full"
                   type="text"
@@ -433,7 +433,7 @@ export default function Dashboard() {
                 <label>Klasse (z.B. 10a)</label>
               </div>
 
-              <div className="field">
+              <div className="field modal-field-4">
                 <input
                   className="focus-glow px-4 py-3 rounded-xl text-white placeholder-transparent w-full"
                   type="date"
@@ -444,7 +444,7 @@ export default function Dashboard() {
                 <label>Geburtsdatum</label>
               </div>
 
-              <div className="field">
+              <div className="field modal-field-5">
                 <input
                   className="focus-glow px-4 py-3 rounded-xl text-white placeholder-transparent w-full"
                   type="text"
@@ -456,7 +456,7 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <div className="flex gap-3">
+            <div className="flex gap-3 modal-buttons-animate">
               <button
                 onClick={() => setShowEditModal(false)}
                 className="flex-1 py-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 text-white font-medium transition-all"
