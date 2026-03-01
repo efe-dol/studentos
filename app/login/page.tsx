@@ -104,8 +104,8 @@ export default function Login() {
           <div className="absolute inset-0 flex items-center">
             <div className="w-full border-t border-white/10"></div>
           </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="px-4 bg-gradient-to-b from-[#1a1a1a] to-[#0f0f0f] text-gray-400">ODER</span>
+          <div className="relative flex justify-center text-xs">
+            <span className="px-4 bg-[#0f0f0f] text-gray-600 font-light">oder</span>
           </div>
         </div>
 
