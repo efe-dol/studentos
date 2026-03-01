@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import AuthBackground from '@/app/components/common/AuthBackground';
 import LoadingScreen from '@/app/components/common/LoadingScreen';
 import Toast from '@/app/components/common/Toast';
+import GradesTab from '@/app/components/grades/GradesTab';
 import { Settings, CheckSquare, BookOpen, BarChart3, Calendar, Zap, Edit, UtensilsCrossed, ListTodo, Shield, AlertTriangle, X, Clock, Plus, Trash2, Bell, BellOff } from 'lucide-react';
 
 type User = {
@@ -57,12 +58,6 @@ export default function Dashboard() {
   const [dismissedMessages, setDismissedMessages] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [editFirstName, setEditFirstName] = useState('');
-  const [editLastName, setEditLastName] = useState('');
-  const [editClassName, setEditClassName] = useState('');
-  const [editBirthdate, setEditBirthdate] = useState('');
-  const [editSchool, setEditSchool] = useState('');
   const [appointmentName, setAppointmentName] = useState('');
   const [appointmentDescription, setAppointmentDescription] = useState('');
   const [appointmentDate, setAppointmentDate] = useState('');
@@ -74,7 +69,6 @@ export default function Dashboard() {
   const [pushSubscribed, setPushSubscribed] = useState(false);
   const [pushLoading, setPushLoading] = useState(false);
   const [subscriptionEndpoint, setSubscriptionEndpoint] = useState<string | null>(null);
-  const [savingProfile, setSavingProfile] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const supabase = createClient();
   const router = useRouter();
@@ -111,52 +105,6 @@ export default function Dashboard() {
       'Nutzer';
 
     return toDisplayName(metadataFirstName) || 'Nutzer';
-  };
-
-  const handleSaveProfile = async () => {
-    if (!user) {
-      setToast({ message: 'Benutzer nicht gefunden', type: 'error' });
-      return;
-    }
-
-    setSavingProfile(true);
-    const { error, data } = await supabase
-      .from('profiles')
-      .upsert({
-        id: user.id,
-        first_name: editFirstName,
-        last_name: editLastName,
-        class_name: editClassName,
-        birthdate: editBirthdate,
-        school: FIXED_SCHOOL_NAME,
-      })
-      .select('first_name, last_name, class_name, birthdate, school')
-      .single();
-
-    if (error) {
-      setToast({ message: 'Fehler beim Speichern: ' + error.message, type: 'error' });
-      setSavingProfile(false);
-      return;
-    }
-
-    if (data) {
-      const normalizedSavedProfile = {
-        ...data,
-        first_name: toDisplayName(data.first_name) || 'Nutzer',
-        school: FIXED_SCHOOL_NAME,
-      };
-
-      setProfile(normalizedSavedProfile);
-      setEditFirstName(normalizedSavedProfile.first_name || '');
-      setEditLastName(normalizedSavedProfile.last_name || '');
-      setEditClassName(normalizedSavedProfile.class_name || '');
-      setEditBirthdate(normalizedSavedProfile.birthdate || '');
-      setEditSchool(FIXED_SCHOOL_NAME);
-      setShowEditModal(false);
-      setToast({ message: 'Profil aktualisiert!', type: 'success' });
-    }
-
-    setSavingProfile(false);
   };
 
   const fetchAppointments = async (limit = 5) => {
@@ -459,11 +407,6 @@ export default function Dashboard() {
           console.log('Profile data:', profileData);
           setProfile(normalizedProfile);
           setIsAdmin(profileData.role === 'admin');
-          setEditFirstName(normalizedProfile.first_name || '');
-          setEditLastName(profileData.last_name || '');
-          setEditClassName(profileData.class_name || '');
-          setEditBirthdate(profileData.birthdate || '');
-          setEditSchool(FIXED_SCHOOL_NAME);
         } else {
             const fallbackFirstName = getFallbackFirstName(session.user);
               console.log('No profile data found');
@@ -475,8 +418,6 @@ export default function Dashboard() {
                 birthdate: '', 
                 school: FIXED_SCHOOL_NAME 
               });
-              setEditFirstName(fallbackFirstName);
-              setEditSchool(FIXED_SCHOOL_NAME);
             }
 
         // Fetch todos
@@ -599,26 +540,12 @@ export default function Dashboard() {
           </div>
 
           <div className="flex gap-3">
-            {isAdmin && (
-              <button
-                onClick={() => router.push('/admin')}
-                className="p-2 rounded-lg hover:bg-blue-500/20 transition-all border border-blue-500/30 hover:scale-105"
-                title="Admin-Bereich"
-              >
-                <Shield className="w-5 h-5 text-blue-400" />
-              </button>
-            )}
             <button 
-              onClick={() => setShowEditModal(true)}
+              onClick={() => router.push('/settings')}
               className="p-2 rounded-lg hover:bg-white/10 transition-all border border-white/10"
+              title="Einstellungen"
             >
               <Settings className="w-5 h-5" />
-            </button>
-            <button
-              onClick={handleSignOut}
-              className="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 transition-all text-sm font-medium"
-            >
-              Sign Out
             </button>
           </div>
         </div>
@@ -939,8 +866,8 @@ export default function Dashboard() {
         )}
 
         {activeTab === 'subjects' && (
-          <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-8 text-center content-fade-in">
-            <p className="text-gray-400">Fächer - Seite noch in Bearbeitung</p>
+          <div className="content-fade-in">
+            <GradesTab />
           </div>
         )}
 
@@ -981,92 +908,18 @@ export default function Dashboard() {
               <span className="text-xs font-medium hidden sm:inline">{tab.label}</span>
             </button>
           ))}
+          <button
+            onClick={() => router.push('/settings')}
+            title="Einstellungen"
+            className={`flex flex-col items-center gap-1 px-3 py-1.5 rounded-lg transition-all duration-300 nav-item-animate text-gray-400 hover:text-white hover:bg-white/5`}
+          >
+            <Settings className="w-5 h-5" />
+            <span className="text-xs font-medium hidden sm:inline">Einstellungen</span>
+          </button>
         </div>
       </div>
 
-      {/* Edit Profile Modal */}
-      {showEditModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 modal-backdrop-animate">
-          <div className="bg-gradient-to-b from-[#1a1a1a] to-[#0f0f0f] border border-white/10 rounded-2xl p-8 max-w-md w-full max-h-[90vh] overflow-y-auto modal-animate">
-            <h2 className="text-white text-2xl font-semibold mb-6">Profil bearbeiten</h2>
 
-            <div className="space-y-4 mb-6">
-              <div className="field modal-field-1">
-                <input
-                  className="focus-glow px-4 py-3 rounded-xl text-white placeholder-transparent w-full"
-                  type="text"
-                  placeholder=" "
-                  value={editFirstName}
-                  onChange={e => setEditFirstName(e.target.value)}
-                />
-                <label>Vorname</label>
-              </div>
-
-              <div className="field modal-field-2">
-                <input
-                  className="focus-glow px-4 py-3 rounded-xl text-white placeholder-transparent w-full"
-                  type="text"
-                  placeholder=" "
-                  value={editLastName}
-                  onChange={e => setEditLastName(e.target.value)}
-                />
-                <label>Nachname</label>
-              </div>
-
-              <div className="field modal-field-3">
-                <input
-                  className="focus-glow px-4 py-3 rounded-xl text-white placeholder-transparent w-full"
-                  type="text"
-                  placeholder=" "
-                  value={editClassName}
-                  onChange={e => setEditClassName(e.target.value)}
-                />
-                <label>Klasse (z.B. 10a)</label>
-              </div>
-
-              <div className="field modal-field-4">
-                <input
-                  className="focus-glow px-4 py-3 rounded-xl text-white placeholder-transparent w-full"
-                  type="date"
-                  placeholder=" "
-                  value={editBirthdate}
-                  onChange={e => setEditBirthdate(e.target.value)}
-                />
-                <label>Geburtsdatum</label>
-              </div>
-
-              <div className="field modal-field-5">
-                <input
-                  className="focus-glow px-4 py-3 rounded-xl text-white placeholder-transparent w-full"
-                  type="text"
-                  value={FIXED_SCHOOL_NAME}
-                  disabled
-                  readOnly
-                />
-                <label>Schule</label>
-              </div>
-            </div>
-
-            <div className="flex gap-3 modal-buttons-animate flex-col">
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setShowEditModal(false)}
-                  className="flex-1 py-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 text-white font-medium transition-all"
-                >
-                  Abbrechen
-                </button>
-                <button
-                  onClick={handleSaveProfile}
-                  disabled={savingProfile}
-                  className="flex-1 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white font-medium transition-all disabled:opacity-50"
-                >
-                  {savingProfile ? 'Speichern...' : 'Speichern'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Toast Notification */}
       {toast && (
