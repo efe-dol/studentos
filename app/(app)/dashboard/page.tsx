@@ -1727,7 +1727,7 @@ export default function Dashboard() {
             { id: 'dashboard', label: 'Dashboard', Icon: BarChart3 },
             { id: 'todos', label: 'ToDos', Icon: ListTodo },
             { id: 'appointments', label: 'Termine', Icon: Calendar },
-            { id: 'schedule', label: 'Stundenplan', Icon: BookOpen },
+            { id: 'schedule', label: 'Stundenplan', Icon: Clock },
             { id: 'subjects', label: 'Fächer', Icon: BookOpen },
             { id: 'homework', label: 'Hausaufgaben', Icon: Edit },
           ].map((tab) => (
