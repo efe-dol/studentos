@@ -1,4 +1,7 @@
 #!/bin/sh
 . "$(dirname "$0")/_/husky.sh"
 
-git push
+# Automatically push to GitHub after commit
+exec 2>/dev/null
+git push origin $(git rev-parse --abbrev-ref HEAD) &
+exit 0

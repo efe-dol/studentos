@@ -44,6 +44,26 @@ type Response struct {
 	Stand  string          `json:"stand"`
 }
 
+// Helper function for minimum value
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+// cleanHTML removes HTML tags and entities from text
+func cleanHTML(text string) string {
+	// Remove HTML tags
+	text = regexp.MustCompile(`<[^>]*>`).ReplaceAllString(text, "")
+	// Replace HTML entities
+	text = strings.ReplaceAll(text, "&nbsp;", " ")
+	text = strings.ReplaceAll(text, "&lt;", "<")
+	text = strings.ReplaceAll(text, "&gt;", ">")
+	text = strings.ReplaceAll(text, "&amp;", "&")
+	return strings.TrimSpace(text)
+}
+
 // ElternportalClient handles login and scraping
 type ElternportalClient struct {
 	httpClient *http.Client
@@ -76,8 +96,8 @@ func (c *ElternportalClient) Login() error {
 
 	// Step 1: Get CSRF token from login page
 	req, _ := http.NewRequest("GET", "https://weilgym.eltern-portal.org/", nil)
-	req.Header.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
-	req.Header.Add("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
+	req.Header.Add("User-Agent", "Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1")
+	req.Header.Add("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7")
 
 	res, err := c.httpClient.Do(req)
 	if err != nil {
@@ -108,7 +128,7 @@ func (c *ElternportalClient) Login() error {
 
 	req, _ = http.NewRequest("POST", loginURL, strings.NewReader(payload))
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-	req.Header.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
+	req.Header.Add("User-Agent", "Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1")
 	req.Header.Add("Origin", "https://weilgym.eltern-portal.org")
 	req.Header.Add("Referer", "https://weilgym.eltern-portal.org/")
 
@@ -132,8 +152,8 @@ func (c *ElternportalClient) GetVertretungsplan() (Response, error) {
 
 	// Fetch Vertretungsplan
 	req, _ := http.NewRequest("GET", "https://weilgym.eltern-portal.org/service/vertretungsplan", nil)
-	req.Header.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
-	req.Header.Add("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
+	req.Header.Add("User-Agent", "Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1")
+	req.Header.Add("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7")
 	req.Header.Add("Referer", "https://weilgym.eltern-portal.org/start")
 
 	res, err := c.httpClient.Do(req)
@@ -148,29 +168,51 @@ func (c *ElternportalClient) GetVertretungsplan() (Response, error) {
 
 	var plan Response
 
+	// Debug: Save HTML for inspection
+	log.Printf("HTML Response length: %d characters", len(bodyStr))
+	if len(bodyStr) < 500 {
+		log.Printf("Full HTML response: %s", bodyStr)
+	}
+
 	// Parse MOTD for today and tomorrow
 	motdRegex := regexp.MustCompile(`<p class="pull-left">([^<]+)</p>`)
 	motds := motdRegex.FindAllStringSubmatch(bodyStr, -1)
+	log.Printf("Found %d MOTD entries", len(motds))
 	if len(motds) >= 1 {
-		plan.Heute.MOTD = strings.TrimSpace(motds[0][1])
+		motdText := motds[0][1]
+		// Replace <br> tags and HTML entities
+		motdText = regexp.MustCompile(`<br[^>]*>`).ReplaceAllString(motdText, " ")
+		motdText = strings.ReplaceAll(motdText, "&nbsp;", " ")
+		motdText = strings.ReplaceAll(motdText, "&lt;", "<")
+		motdText = strings.ReplaceAll(motdText, "&gt;", ">")
+		plan.Heute.MOTD = strings.TrimSpace(motdText)
+		log.Printf("Today MOTD: %s", plan.Heute.MOTD)
 	}
 	if len(motds) >= 2 {
-		plan.Morgen.MOTD = strings.TrimSpace(motds[1][1])
+		motdText := motds[1][1]
+		motdText = regexp.MustCompile(`<br[^>]*>`).ReplaceAllString(motdText, " ")
+		motdText = strings.ReplaceAll(motdText, "&nbsp;", " ")
+		motdText = strings.ReplaceAll(motdText, "&lt;", "<")
+		motdText = strings.ReplaceAll(motdText, "&gt;", ">")
+		plan.Morgen.MOTD = strings.TrimSpace(motdText)
+		log.Printf("Tomorrow MOTD: %s", plan.Morgen.MOTD)
 	}
 
 	// Parse substitution tables
 	tableRegex := regexp.MustCompile(`<table[^>]*class="table"[^>]*>(.*?)</table>`)
 	tables := tableRegex.FindAllStringSubmatch(bodyStr, -1)
+	log.Printf("Found %d tables", len(tables))
 
 	var allVertretungen []Vertretung
 	tableIndex := 0
 
-	for _, tableMatch := range tables {
+	for tableIdx, tableMatch := range tables {
 		tableContent := tableMatch[1]
 
 		// Parse table rows
 		rowRegex := regexp.MustCompile(`<tr[^>]*>(.*?)</tr>`)
 		rows := rowRegex.FindAllStringSubmatch(tableContent, -1)
+		log.Printf("Table %d: Found %d rows", tableIdx, len(rows))
 
 		allVertretungen = []Vertretung{}
 
@@ -180,8 +222,18 @@ func (c *ElternportalClient) GetVertretungsplan() (Response, error) {
 			}
 
 			rowContent := rowMatch[1]
-			cellRegex := regexp.MustCompile(`<td[^>]*>([^<]*)</td>`)
+			// Updated regex to handle spacing and various attributes in <td> tags
+			cellRegex := regexp.MustCompile(`<td[^>]*>([^<]*(?:<[^>]*>[^<]*)*)</td>`)
 			cells := cellRegex.FindAllStringSubmatch(rowContent, -1)
+			
+			if len(cells) < 6 {
+				snippet := rowContent
+				if len(rowContent) > 100 {
+					snippet = rowContent[:100]
+				}
+				log.Printf("Table %d Row %d: Only %d cells (expected 6), content: %s", 
+					tableIdx, i, len(cells), snippet)
+			}
 
 			if len(cells) >= 6 {
 				v := Vertretung{
@@ -192,9 +244,18 @@ func (c *ElternportalClient) GetVertretungsplan() (Response, error) {
 					Raum:       strings.TrimSpace(cells[4][1]),
 					Info:       strings.TrimSpace(cells[5][1]),
 				}
+				
+				// Clean up HTML tags in cell content
+				v.Stunde = cleanHTML(v.Stunde)
+				v.Betrifft = cleanHTML(v.Betrifft)
+				v.Vertretung = cleanHTML(v.Vertretung)
+				v.Fach = cleanHTML(v.Fach)
+				v.Raum = cleanHTML(v.Raum)
+				v.Info = cleanHTML(v.Info)
 
 				if v.Stunde != "Std." && v.Stunde != "" {
 					allVertretungen = append(allVertretungen, v)
+					log.Printf("Added vertretung: %+v", v)
 				}
 			}
 		}
@@ -207,15 +268,33 @@ func (c *ElternportalClient) GetVertretungsplan() (Response, error) {
 		tableIndex++
 	}
 
-	// Parse Stand
-	standRegex := regexp.MustCompile(`<div[^>]*class="list[^>]*">Stand:\s+([^<]+)</div>`)
-	standMatch := standRegex.FindStringSubmatch(bodyStr)
-	if len(standMatch) > 1 {
-		plan.Stand = strings.TrimSpace(standMatch[1])
+	// Parse Stand - try multiple patterns with HTML entity handling
+	standPatterns := []string{
+		`<div[^>]*class=['"]list[^>]*>Stand:[\s&;a-z]*(\d{1,2}\.\d{1,2}\.\d{4}[\s&;a-z]*\d{1,2}:\d{2}:\d{2})</div>`,
+		`Stand:[\s&;a-z]*(\d{1,2}\.\d{1,2}\.\d{4}[\s&;a-z]*\d{1,2}:\d{2}:\d{2})`,
+	}
+	
+	for _, pattern := range standPatterns {
+		standRegex := regexp.MustCompile(pattern)
+		standMatch := standRegex.FindStringSubmatch(bodyStr)
+		if len(standMatch) > 1 {
+			standText := standMatch[1]
+			// Replace HTML entities
+			standText = strings.ReplaceAll(standText, "&nbsp;", " ")
+			plan.Stand = strings.TrimSpace(standText)
+			log.Printf("Stand found with pattern '%s': %s", pattern, plan.Stand)
+			break
+		}
+	}
+	if plan.Stand == "" {
+		log.Printf("Stand not found with any pattern")
 	}
 
 	log.Printf("Successfully parsed vertretungsplan: %d heute, %d morgen",
 		len(plan.Heute.Vertretungen), len(plan.Morgen.Vertretungen))
+
+	return plan, nil
+}
 
 	return plan, nil
 }
