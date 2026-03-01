@@ -36,7 +36,7 @@ export default function Login() {
       
       {/* Header */}
       <div className="relative z-10 border-b border-white/10 backdrop-blur-xl bg-white/5">
-        <div className="max-w-xl mx-auto px-6 py-4">
+        <div className="w-full px-6 py-4">
           <h2 className="text-white text-xl font-semibold">StudentOS</h2>
         </div>
       </div>
@@ -45,10 +45,10 @@ export default function Login() {
       <div className="flex-1 flex flex-col items-center justify-center px-6 py-10">
         {/* Title Section - Outside the form */}
         <div className="w-full max-w-xl mb-8 text-center animate-[slideUpSmooth_0.5s_cubic-bezier(0.16,1,0.3,1)]">
-          <h1 className="text-5xl font-bold bg-gradient-to-b from-white via-white to-white/40 bg-clip-text text-transparent mb-3">
+          <h1 className="text-3xl font-bold text-white mb-3">
             Anmelden
           </h1>
-          <p className="text-gray-400 text-lg">
+          <p className="text-gray-400 text-base">
             Melde dich an, um auf StudentOS zuzugreifen
           </p>
         </div>
