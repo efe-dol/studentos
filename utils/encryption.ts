@@ -33,7 +33,7 @@ export async function saveElternportalCredentials(
   email: string,
   password: string
 ) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const encrypted = encryptCredentials(email, password);
 
   const { error } = await supabase
@@ -49,7 +49,7 @@ export async function saveElternportalCredentials(
 
 // Hole Elternportal-Credentials
 export async function getElternportalCredentials(userId: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
   
   const { data, error } = await supabase
     .from('profiles')

@@ -1,5 +1,29 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+# StudentOS
+
+A modern student dashboard for managing school tasks, assignments, grades, and substitution plans.
+
+## ✨ Features
+
+- 📊 **Dashboard**: Overview of todos, homework, grades, and upcoming events
+- 📅 **Schedule**: Weekly timetable (coming soon)
+- 📖 **Subjects**: Subject management (coming soon)
+- ✍️ **Homework**: Homework tracker (coming soon)
+- 🔄 **Substitutions**: Elternportal integration for viewing substitution plans
+
+## 🔐 Elternportal Integration
+
+StudentOS integrates with the Elternportal to fetch substitution plans. Your credentials are encrypted using AES-256-CBC before being stored.
+
+**📖 [Read the detailed setup guide →](ELTERNPORTAL_SETUP.md)**
+
+### Quick Setup
+
+1. **Database Migration**: Run `app/migrations/001_add_elternportal_column.sql` in Supabase
+2. **Environment**: Copy `.env.example` to `.env.local` and fill in your credentials
+3. **Configure**: Open Dashboard → Settings (⚙️) → "Elternportal-Zugangsdaten"
+
 ## Getting Started
 
 First, run the development server:
