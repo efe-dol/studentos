@@ -62,6 +62,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const parsedGrade = Number(grade);
+    if (!Number.isInteger(parsedGrade) || parsedGrade < 1 || parsedGrade > 6) {
+      return NextResponse.json(
+        { error: 'grade must be an integer between 1 and 6' },
+        { status: 400 }
+      );
+    }
+
+    const parsedWeight = Number(weight);
+    if (!Number.isFinite(parsedWeight) || parsedWeight <= 0) {
+      return NextResponse.json(
+        { error: 'weight must be a positive number' },
+        { status: 400 }
+      );
+    }
+
     // Verify subject ownership
     const { data: subject } = await supabase
       .from('subjects')
@@ -78,9 +94,9 @@ export async function POST(request: NextRequest) {
       .insert({
         subject_id: subjectId,
         user_id: user.id,
-        grade: parseFloat(grade),
+        grade: parsedGrade,
         grade_type: gradeType,
-        weight: parseFloat(weight),
+        weight: parsedWeight,
         description,
         grade_date: gradeDate || new Date().toISOString(),
       })

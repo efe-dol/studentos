@@ -27,10 +27,35 @@ export async function PUT(
       return NextResponse.json({ error: 'Not found or unauthorized' }, { status: 404 });
     }
 
-    const updateData: any = {};
-    if (grade !== undefined) updateData.grade = parseFloat(grade);
+    const updateData: {
+      grade?: number;
+      grade_type?: string;
+      weight?: number;
+      description?: string | null;
+      grade_date?: string;
+    } = {};
+
+    if (grade !== undefined) {
+      const parsedGrade = Number(grade);
+      if (!Number.isInteger(parsedGrade) || parsedGrade < 1 || parsedGrade > 6) {
+        return NextResponse.json(
+          { error: 'grade must be an integer between 1 and 6' },
+          { status: 400 }
+        );
+      }
+      updateData.grade = parsedGrade;
+    }
     if (gradeType !== undefined) updateData.grade_type = gradeType;
-    if (weight !== undefined) updateData.weight = parseFloat(weight);
+    if (weight !== undefined) {
+      const parsedWeight = Number(weight);
+      if (!Number.isFinite(parsedWeight) || parsedWeight <= 0) {
+        return NextResponse.json(
+          { error: 'weight must be a positive number' },
+          { status: 400 }
+        );
+      }
+      updateData.weight = parsedWeight;
+    }
     if (description !== undefined) updateData.description = description;
     if (gradeDate !== undefined) updateData.grade_date = gradeDate;
 

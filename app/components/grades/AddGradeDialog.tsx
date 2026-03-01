@@ -74,10 +74,9 @@ export default function AddGradeDialog({
       return;
     }
 
-    const normalizedGrade = gradeInput.replace(',', '.').trim();
-    const gradeNum = parseFloat(normalizedGrade);
-    if (isNaN(gradeNum) || gradeNum < 1 || gradeNum > 6) {
-      setError('Note muss zwischen 1 und 6 liegen');
+    const gradeNum = Number(gradeInput.trim());
+    if (!Number.isInteger(gradeNum) || gradeNum < 1 || gradeNum > 6) {
+      setError('Note muss eine ganze Zahl zwischen 1 und 6 sein');
       return;
     }
 
@@ -142,13 +141,13 @@ export default function AddGradeDialog({
               type="number"
               min="1"
               max="6"
-              step="0.1"
+              step="1"
               value={gradeInput}
               onChange={(e) => {
                 setGradeInput(e.target.value);
                 if (error) setError('');
               }}
-              placeholder="z.B. 2.5"
+              placeholder="z.B. 2"
               className="w-full text-lg font-medium bg-white/5 border border-white/10 rounded-lg px-3 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/25 transition-all"
               disabled={isSubmitting}
               autoFocus
