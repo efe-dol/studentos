@@ -86,8 +86,9 @@ export default function AddGradeDialog({
   const selectedType = GRADE_TYPES.find(t => t.id === gradeType);
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-      <div className="bg-gradient-to-br from-[#1a1a1a] to-[#0d0d0d] rounded-2xl shadow-2xl p-6 max-w-md w-full border border-white/5 animate-in fade-in zoom-in-95 duration-200 max-h-[95vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="min-h-[100dvh] flex items-center justify-center p-4">
+        <div className="bg-gradient-to-br from-[#1a1a1a] to-[#0d0d0d] rounded-2xl shadow-2xl p-6 max-w-md w-full border border-white/5 animate-in fade-in zoom-in-95 duration-200 max-h-[calc(100dvh-2rem)] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-6 gap-3">
           <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -242,6 +243,7 @@ export default function AddGradeDialog({
             </button>
           </div>
         </form>
+        </div>
       </div>
     </div>
   );
