@@ -1,65 +1,191 @@
-import Image from "next/image";
+'use client';
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import AuthBackground from '@/app/components/AuthBackground';
 
 export default function Home() {
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    setVisible(true);
+  }, []);
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <div className="min-h-screen bg-gradient-to-b from-[#0a0a0a] via-[#121212] to-[#1a1a1a] text-white overflow-x-hidden">
+      <AuthBackground />
+
+      {/* Hero Section */}
+      <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-6 py-20">
+        <div
+          className={`max-w-4xl mx-auto text-center space-y-8 transition-all duration-1000 ${
+            visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
+          }`}
+        >
+          {/* Logo/Title */}
+          <div className="space-y-4">
+            <h1 className="text-6xl md:text-7xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent animate-pulse">
+              StudentOS
+            </h1>
+            <p className="text-xl md:text-2xl text-gray-300">
+              Gymnasium Weilheim i.OB
+            </p>
+          </div>
+
+          {/* Description */}
+          <p className="text-lg text-gray-400 max-w-2xl mx-auto">
+            Deine zentrale Plattform für Stundenplan, Hausaufgaben, Noten und mehr.
+            Installiere die App auf deinem iPhone oder iPad für den besten Zugang.
           </p>
+
+          {/* CTA Buttons */}
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-4">
+            <Link
+              href="/login"
+              className="px-8 py-4 rounded-xl bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 font-semibold text-lg transition-all transform hover:scale-105 shadow-lg shadow-blue-500/50"
+            >
+              Jetzt anmelden
+            </Link>
+            <Link
+              href="/register"
+              className="px-8 py-4 rounded-xl backdrop-blur-xl bg-white/10 hover:bg-white/20 border border-white/20 font-semibold text-lg transition-all"
+            >
+              Registrieren
+            </Link>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+        {/* Installation Guide */}
+        <div
+          className={`max-w-3xl mx-auto mt-20 transition-all duration-1000 delay-300 ${
+            visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
+          }`}
+        >
+          <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-8">
+            <h2 className="text-3xl font-semibold mb-6 text-center">
+              📱 App Installation (Safari/iOS)
+            </h2>
+            <p className="text-gray-400 text-center mb-8">
+              Installiere StudentOS auf deinem iPhone oder iPad für eine native App-Erfahrung
+            </p>
+
+            <div className="space-y-6">
+              {/* Step 1 */}
+              <div className="flex gap-4 p-4 rounded-xl bg-white/5 hover:bg-white/10 transition-all group">
+                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center font-bold text-lg">
+                  1
+                </div>
+                <div>
+                  <h3 className="font-semibold text-lg mb-2 group-hover:text-blue-400 transition-colors">
+                    Safari öffnen
+                  </h3>
+                  <p className="text-gray-400 text-sm">
+                    Öffne diese Webseite in <strong>Safari</strong> auf deinem iPhone oder iPad
+                  </p>
+                </div>
+              </div>
+
+              {/* Step 2 */}
+              <div className="flex gap-4 p-4 rounded-xl bg-white/5 hover:bg-white/10 transition-all group">
+                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center font-bold text-lg">
+                  2
+                </div>
+                <div>
+                  <h3 className="font-semibold text-lg mb-2 group-hover:text-purple-400 transition-colors">
+                    Teilen-Button tippen
+                  </h3>
+                  <p className="text-gray-400 text-sm">
+                    Tippe unten auf das <strong>Teilen-Symbol</strong> (Viereck mit Pfeil nach oben) 
+                    in der Safari-Leiste
+                  </p>
+                </div>
+              </div>
+
+              {/* Step 3 */}
+              <div className="flex gap-4 p-4 rounded-xl bg-white/5 hover:bg-white/10 transition-all group">
+                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-r from-pink-500 to-red-500 flex items-center justify-center font-bold text-lg">
+                  3
+                </div>
+                <div>
+                  <h3 className="font-semibold text-lg mb-2 group-hover:text-pink-400 transition-colors">
+                    Zum Home-Bildschirm
+                  </h3>
+                  <p className="text-gray-400 text-sm">
+                    Scrolle im Menü nach unten und wähle{' '}
+                    <strong>"Zum Home-Bildschirm"</strong> aus
+                  </p>
+                </div>
+              </div>
+
+              {/* Step 4 */}
+              <div className="flex gap-4 p-4 rounded-xl bg-white/5 hover:bg-white/10 transition-all group">
+                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-r from-green-500 to-emerald-500 flex items-center justify-center font-bold text-lg">
+                  4
+                </div>
+                <div>
+                  <h3 className="font-semibold text-lg mb-2 group-hover:text-green-400 transition-colors">
+                    Fertig!
+                  </h3>
+                  <p className="text-gray-400 text-sm">
+                    Bestätige mit <strong>"Hinzufügen"</strong>. Die App erscheint jetzt auf deinem Home-Bildschirm
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Additional Info */}
+            <div className="mt-8 p-4 rounded-xl bg-blue-500/10 border border-blue-500/20">
+              <p className="text-sm text-blue-300 text-center">
+                💡 <strong>Tipp:</strong> Die installierte App funktioniert wie eine native App 
+                und bietet schnellen Zugriff auf alle Funktionen.
+              </p>
+            </div>
+          </div>
         </div>
-      </main>
+
+        {/* Features Preview */}
+        <div
+          className={`max-w-5xl mx-auto mt-20 transition-all duration-1000 delay-500 ${
+            visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
+          }`}
+        >
+          <h2 className="text-3xl font-semibold mb-10 text-center">
+            ✨ Features
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Feature 1 */}
+            <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-all transform hover:scale-105">
+              <div className="text-4xl mb-4">📚</div>
+              <h3 className="text-xl font-semibold mb-2">Stundenplan</h3>
+              <p className="text-gray-400 text-sm">
+                Immer den aktuellen Stundenplan dabei
+              </p>
+            </div>
+
+            {/* Feature 2 */}
+            <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-all transform hover:scale-105">
+              <div className="text-4xl mb-4">✏️</div>
+              <h3 className="text-xl font-semibold mb-2">Hausaufgaben</h3>
+              <p className="text-gray-400 text-sm">
+                Alle Aufgaben an einem Ort verwalten
+              </p>
+            </div>
+
+            {/* Feature 3 */}
+            <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-all transform hover:scale-105">
+              <div className="text-4xl mb-4">📊</div>
+              <h3 className="text-xl font-semibold mb-2">Noten</h3>
+              <p className="text-gray-400 text-sm">
+                Überblick über deine Leistungen
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="mt-20 text-center text-gray-500 text-sm">
+          <p>© 2026 StudentOS - Gymnasium Weilheim i.OB</p>
+        </div>
+      </div>
     </div>
   );
 }
