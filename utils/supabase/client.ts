@@ -14,6 +14,13 @@ export const createClient = () => {
             return { name, value: decodeURIComponent(rest.join('=')) };
           });
         },
+        setAll(cookies) {
+          if (typeof document === 'undefined') return;
+          cookies.forEach(({ name, value, options }) => {
+            const cookieString = `${name}=${encodeURIComponent(value)}`;
+            document.cookie = cookieString;
+          });
+        },
       },
     }
   )
