@@ -33,40 +33,43 @@ export async function GET(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // TODO: Hier würde der Go-Backend-Call stattfinden
-    // Beispiel:
-    // const response = await fetch('http://localhost:3001/api/vertretungen', {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify({
-    //     email: credentials.email,
-    //     password: credentials.password,
-    //   }),
-    // });
+    // Rufe Go-Backend auf
+    const goBackendUrl = process.env.GO_BACKEND_URL || 'http://localhost:8000';
+    
+    try {
+      const response = await fetch(`${goBackendUrl}/api/vertretungen`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: credentials.email,
+          password: credentials.password,
+        }),
+      });
 
-    // Placeholder-Response
-    const mockVertretungen = {
-      heute: {
-        motd: 'Keine Änderungen',
-        vertretungen: [],
-      },
-      morgen: {
-        motd: 'Vertretungsplan verfügbar',
-        vertretungen: [
-          {
-            stunde: '3',
-            betrifft: '10a',
-            vertretung: 'Mw',
-            fach: 'Mathematik',
-            raum: '302',
-            info: 'Raumänderung',
-          },
-        ],
-      },
-      stand: '01.03.2026 08:30',
-    };
+      if (!response.ok) {
+        throw new Error(`Go Backend returned ${response.status}`);
+      }
 
-    return NextResponse.json(mockVertretungen);
+      const vertretungen = await response.json();
+      return NextResponse.json(vertretungen);
+    } catch (goError) {
+      console.error('Go Backend Error:', goError);
+      
+      // Fallback: Mock-Daten wenn Backend nicht erreichbar
+      const mockVertretungen = {
+        heute: {
+          motd: 'Backend nicht erreichbar - Mock-Daten',
+          vertretungen: [],
+        },
+        morgen: {
+          motd: 'Bitte Go-Backend starten',
+          vertretungen: [],
+        },
+        stand: new Date().toLocaleString('de-DE'),
+      };
+
+      return NextResponse.json(mockVertretungen);
+    }
   } catch (error) {
     console.error('Vertretungen API Error:', error);
     return NextResponse.json(
