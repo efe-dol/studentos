@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import AuthBackground from '@/app/components/common/AuthBackground';
+import LoadingScreen from '@/app/components/common/LoadingScreen';
 import Toast from '@/app/components/common/Toast';
 import { CheckSquare, Plus, Trash2, Edit as EditIcon, X, AlertCircle, ArrowLeft } from 'lucide-react';
 
