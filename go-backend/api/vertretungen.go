@@ -16,8 +16,9 @@ import (
 
 // Credentials from the request
 type Credentials struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	Email     string `json:"email"`
+	Password  string `json:"password"`
+	ClassName string `json:"class_name"`
 }
 
 // Vertretung represents a single substitution entry
@@ -219,6 +220,45 @@ func (c *ElternportalClient) GetVertretungsplan() (Response, error) {
 	return plan, nil
 }
 
+// FilterByClass filters vertretungen for a specific class
+func FilterByClass(plan Response, className string) Response {
+	log.Printf("Filtering vertretungen for class: %s", className)
+	
+	// Normalize class name for matching (e.g., "10A" == "10a")
+	classNameLower := strings.ToLower(className)
+	
+	filtered := Response{
+		Heute: Vertretungsplan{
+			MOTD:         plan.Heute.MOTD,
+			Vertretungen: []Vertretung{},
+		},
+		Morgen: Vertretungsplan{
+			MOTD:         plan.Morgen.MOTD,
+			Vertretungen: []Vertretung{},
+		},
+		Stand: plan.Stand,
+	}
+	
+	// Filter today's vertretungen
+	for _, v := range plan.Heute.Vertretungen {
+		if strings.ToLower(v.Betrifft) == classNameLower || strings.Contains(strings.ToLower(v.Betrifft), strings.ToLower(className)) {
+			filtered.Heute.Vertretungen = append(filtered.Heute.Vertretungen, v)
+		}
+	}
+	
+	// Filter tomorrow's vertretungen
+	for _, v := range plan.Morgen.Vertretungen {
+		if strings.ToLower(v.Betrifft) == classNameLower || strings.Contains(strings.ToLower(v.Betrifft), strings.ToLower(className)) {
+			filtered.Morgen.Vertretungen = append(filtered.Morgen.Vertretungen, v)
+		}
+	}
+	
+	log.Printf("Filtered vertretungen: %d heute, %d morgen",
+		len(filtered.Heute.Vertretungen), len(filtered.Morgen.Vertretungen))
+	
+	return filtered
+}
+
 // Handler is the Vercel serverless function
 func Handler(w http.ResponseWriter, r *http.Request) {
 	// CORS headers
@@ -288,6 +328,11 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Printf("Successfully fetched vertretungsplan")
+
+	// Filter by class if provided
+	if creds.ClassName != "" {
+		vertretungen = FilterByClass(vertretungen, creds.ClassName)
+	}
 
 	// Send response
 	json.NewEncoder(w).Encode(vertretungen)

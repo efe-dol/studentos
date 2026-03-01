@@ -30,6 +30,21 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Hole Nutzer-Klasse aus Profil
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('class_name')
+      .eq('id', user.id)
+      .single();
+
+    if (profileError || !profile?.class_name) {
+      return NextResponse.json({ 
+        error: 'Klasse nicht im Profil eingetragen' 
+      }, { status: 400 });
+    }
+
+    console.log('User class:', profile.class_name);
+
     // Hole Elternportal-Credentials
     const credentials = await getElternportalCredentials(user.id);
     
@@ -52,6 +67,7 @@ export async function GET(request: NextRequest) {
         body: JSON.stringify({
           email: credentials.email,
           password: credentials.password,
+          class_name: profile.class_name,
         }),
       });
 
