@@ -63,16 +63,33 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-screen relative overflow-hidden flex items-center justify-center">
+    <div className="min-h-screen relative overflow-hidden flex flex-col">
       <AuthBackground />
-      <form
-        onSubmit={handleSignUp}
-        className="relative z-10 w-full max-w-xl p-10 rounded-2xl backdrop-blur-xl bg-white/5 border border-white/10 shadow-2xl animate-[slideUpSmooth_0.6s_cubic-bezier(0.16,1,0.3,1)]"
-      >
-        <div className="mb-6 text-center">
-          <h1 className="text-white text-3xl font-semibold">Account erstellen</h1>
-          <p className="text-gray-300 text-sm mt-1">Erstelle einen Account, um mit StudentOS zu starten</p>
+      
+      {/* Header */}
+      <div className="relative z-10 border-b border-white/10 backdrop-blur-xl bg-white/5">
+        <div className="max-w-xl mx-auto px-6 py-4">
+          <h2 className="text-white text-xl font-semibold">StudentOS</h2>
         </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col items-center justify-center px-6 py-10">
+        {/* Title Section - Outside the form */}
+        <div className="w-full max-w-xl mb-8 text-center animate-[slideUpSmooth_0.5s_cubic-bezier(0.16,1,0.3,1)]">
+          <h1 className="text-5xl font-bold bg-gradient-to-b from-white via-white to-white/40 bg-clip-text text-transparent mb-3">
+            Account erstellen
+          </h1>
+          <p className="text-gray-400 text-lg">
+            Erstelle einen Account, um mit StudentOS zu starten
+          </p>
+        </div>
+
+        {/* Form Box */}
+        <form
+          onSubmit={handleSignUp}
+          className="relative z-10 w-full max-w-xl p-10 rounded-2xl backdrop-blur-xl bg-white/5 border border-white/10 shadow-2xl animate-[slideUpSmooth_0.6s_cubic-bezier(0.16,1,0.3,1)_0.1s] opacity-0 [animation-fill-mode:forwards]"
+        >
 
         <div className="grid grid-cols-1 gap-4">
           <div className="field">
@@ -162,9 +179,6 @@ export default function Register() {
           </p>
         </div>
       </form>
-
-      <div className="absolute bottom-6 left-0 right-0 text-center">
-        <p className="text-gray-500 text-xs">© 2026 StudentOS by Efe Dolaman</p>
       </div>
     </div>
   );
