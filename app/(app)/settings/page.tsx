@@ -359,7 +359,7 @@ export default function SettingsPage() {
                   Profilinformationen
                 </h2>
                 <div className="space-y-4">
-                  <div className="field animate-in fade-in slide-in-from-left-4 duration-500 delay-100">
+                    <div className="field animate-in fade-in slide-in-from-left-4 duration-500 delay-350">
                     <input
                       className="focus-glow px-4 py-3 rounded-xl text-white placeholder-transparent w-full bg-white/5 border border-white/10 transform transition-all hover:scale-[1.01] duration-200"
                       type="text"
@@ -370,7 +370,7 @@ export default function SettingsPage() {
                     <label>Vorname</label>
                   </div>
 
-                  <div className="field animate-in fade-in slide-in-from-left-4 duration-500 delay-150">
+                    <div className="field animate-in fade-in slide-in-from-left-4 duration-500 delay-400">
                     <input
                       className="focus-glow px-4 py-3 rounded-xl text-white placeholder-transparent w-full bg-white/5 border border-white/10 transform transition-all hover:scale-[1.01] duration-200"
                       type="text"
@@ -381,7 +381,7 @@ export default function SettingsPage() {
                     <label>Nachname</label>
                   </div>
 
-                  <div className="field animate-in fade-in slide-in-from-left-4 duration-500 delay-200">
+                    <div className="field animate-in fade-in slide-in-from-left-4 duration-500 delay-450">
                     <input
                       className="focus-glow px-4 py-3 rounded-xl text-white placeholder-transparent w-full bg-white/5 border border-white/10 transform transition-all hover:scale-[1.01] duration-200"
                       type="text"
@@ -392,7 +392,7 @@ export default function SettingsPage() {
                     <label>Klasse</label>
                   </div>
 
-                  <div className="field animate-in fade-in slide-in-from-left-4 duration-500 delay-250">
+                    <div className="field animate-in fade-in slide-in-from-left-4 duration-500 delay-500">
                     <input
                       className="focus-glow px-4 py-3 rounded-xl text-white placeholder-transparent w-full bg-white/5 border border-white/10 transform transition-all hover:scale-[1.01] duration-200"
                       type="date"
@@ -403,7 +403,7 @@ export default function SettingsPage() {
                     <label>Geburtstag</label>
                   </div>
 
-                  <div className="field animate-in fade-in slide-in-from-left-4 duration-500 delay-300">
+                    <div className="field animate-in fade-in slide-in-from-left-4 duration-500 delay-550">
                     <input
                       className="focus-glow px-4 py-3 rounded-xl text-white placeholder-transparent w-full bg-white/5 border border-white/10"
                       type="text"
@@ -414,7 +414,7 @@ export default function SettingsPage() {
                     <label>Schule</label>
                   </div>
 
-                  <div className="field animate-in fade-in slide-in-from-left-4 duration-500 delay-350">
+                    <div className="field animate-in fade-in slide-in-from-left-4 duration-500 delay-600">
                     <input
                       className="focus-glow px-4 py-3 rounded-xl text-white placeholder-transparent w-full bg-white/5 border border-white/10"
                       type="email"
@@ -426,7 +426,7 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
-                <div className="flex gap-3 mt-8 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-400">
+                  <div className="flex gap-3 mt-8 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-700">
                   <button
                     onClick={handleSaveProfile}
                     disabled={savingProfile}
@@ -441,22 +441,22 @@ export default function SettingsPage() {
 
           {/* Notifications Tab */}
           {activeTab === 'notifications' && (
-            <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-400">
-              <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-8 animate-in zoom-in-95 duration-500 delay-100">
-                <h2 className="text-2xl font-semibold mb-6 flex items-center gap-2 animate-in fade-in slide-in-from-left-4 duration-500">
+            <div className="space-y-6 animate-in fade-in duration-500 delay-200">
+              <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-8 animate-in fade-in zoom-in-95 duration-500 delay-250">
+                <h2 className="text-2xl font-semibold mb-6 flex items-center gap-2 animate-in fade-in slide-in-from-left-4 duration-500 delay-300">
                   <Bell className="w-6 h-6" />
                   Benachrichtigungen
                 </h2>
 
                 {!pushSupported ? (
-                  <div className="p-4 rounded-lg bg-yellow-500/10 border border-yellow-500/20 animate-in fade-in slide-in-from-left-4 duration-500">
+                  <div className="p-4 rounded-lg bg-yellow-500/10 border border-yellow-500/20 animate-in fade-in slide-in-from-left-4 duration-500 delay-350">
                     <p className="text-yellow-300 text-sm">
                       Push-Benachrichtigungen werden von deinem Browser oder Gerät nicht unterstützt.
                     </p>
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    <div className="flex items-center justify-between p-4 rounded-lg bg-white/5 border border-white/10 animate-in fade-in slide-in-from-left-4 duration-500 delay-100 transform transition-all hover:bg-white/10 hover:scale-[1.01]">
+                    <div className="flex items-center justify-between p-4 rounded-lg bg-white/5 border border-white/10 animate-in fade-in slide-in-from-left-4 duration-500 delay-350 transform transition-all hover:bg-white/10 hover:scale-[1.01]">
                       <div>
                         <h3 className="font-medium text-white">Push-Benachrichtigungen</h3>
                         <p className="text-sm text-gray-400 mt-1">
@@ -489,7 +489,7 @@ export default function SettingsPage() {
                     </div>
 
                     {pushSubscribed && (
-                      <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/20 animate-in fade-in zoom-in-95 duration-500 delay-200">
+                      <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/20 animate-in fade-in zoom-in-95 duration-500 delay-400">
                         <p className="text-green-300 text-sm flex items-center gap-2">
                           <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
                           Push-Benachrichtigungen sind aktiviert
@@ -498,7 +498,7 @@ export default function SettingsPage() {
                     )}
 
                     {!pushSubscribed && (
-                      <div className="p-4 rounded-lg bg-gray-500/10 border border-gray-500/20 animate-in fade-in zoom-in-95 duration-500 delay-200">
+                      <div className="p-4 rounded-lg bg-gray-500/10 border border-gray-500/20 animate-in fade-in zoom-in-95 duration-500 delay-400">
                         <p className="text-gray-300 text-sm flex items-center gap-2">
                           <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
                           Push-Benachrichtigungen sind deaktiviert
@@ -512,11 +512,11 @@ export default function SettingsPage() {
           )}
 
           {/* Admin & Account Section */}
-          <div className="mt-8 space-y-4 border-t border-white/10 pt-8 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-300">
+          <div className="mt-8 space-y-4 border-t border-white/10 pt-8 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-500">
             {isAdmin && (
               <button
                 onClick={() => router.push('/admin')}
-                className="w-full flex items-center justify-between p-4 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 transition-all group transform hover:scale-[1.02] active:scale-[0.98] duration-200 animate-in fade-in slide-in-from-bottom-4 duration-500"
+                className="w-full flex items-center justify-between p-4 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 transition-all group transform hover:scale-[1.02] active:scale-[0.98] duration-200 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-550"
               >
                 <div className="flex items-center gap-3 text-left">
                   <Shield className="w-5 h-5 text-blue-400 group-hover:scale-110 transition-transform" />
@@ -531,7 +531,7 @@ export default function SettingsPage() {
 
             <button
               onClick={handleSignOut}
-              className="w-full flex items-center justify-between p-4 rounded-lg bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 transition-all group transform hover:scale-[1.02] active:scale-[0.98] duration-200 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-100"
+              className="w-full flex items-center justify-between p-4 rounded-lg bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 transition-all group transform hover:scale-[1.02] active:scale-[0.98] duration-200 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-600"
             >
               <div className="flex items-center gap-3 text-left">
                 <LogOut className="w-5 h-5 text-red-400 group-hover:scale-110 transition-transform" />
