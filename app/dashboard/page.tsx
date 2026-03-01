@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
 import AuthBackground from '@/app/components/AuthBackground';
+import Toast from '@/app/components/Toast';
 
 type User = {
   id: string;
@@ -30,6 +31,7 @@ export default function Dashboard() {
   const [editBirthdate, setEditBirthdate] = useState('');
   const [editSchool, setEditSchool] = useState('');
   const [savingProfile, setSavingProfile] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const supabase = createClient();
   const router = useRouter();
 
@@ -69,7 +71,7 @@ export default function Dashboard() {
 
   const handleSaveProfile = async () => {
     if (!user) {
-      alert('Benutzer nicht gefunden');
+      setToast({ message: 'Benutzer nicht gefunden', type: 'error' });
       return;
     }
 
@@ -88,7 +90,7 @@ export default function Dashboard() {
       .single();
 
     if (error) {
-      alert('Fehler beim Speichern: ' + error.message);
+      setToast({ message: 'Fehler beim Speichern: ' + error.message, type: 'error' });
       setSavingProfile(false);
       return;
     }
@@ -107,7 +109,7 @@ export default function Dashboard() {
       setEditBirthdate(normalizedSavedProfile.birthdate || '');
       setEditSchool(FIXED_SCHOOL_NAME);
       setShowEditModal(false);
-      alert('Profil aktualisiert!');
+      setToast({ message: 'Profil aktualisiert!', type: 'success' });
     }
 
     setSavingProfile(false);
@@ -470,6 +472,15 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Toast Notification */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
       )}
     </div>
   );

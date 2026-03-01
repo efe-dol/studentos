@@ -3,11 +3,13 @@ import { useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
 import AuthBackground from '@/app/components/AuthBackground';
+import Toast from '@/app/components/Toast';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const supabase = createClient();
   const router = useRouter();
 
@@ -21,7 +23,7 @@ export default function Login() {
     });
 
     if (error) {
-      alert(error.message);
+      setToast({ message: error.message, type: 'error' });
       setLoading(false);
       return;
     }
@@ -107,6 +109,15 @@ export default function Login() {
         </div>
       </form>
       </div>
+
+      {/* Toast Notification */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   );
 }

@@ -3,6 +3,8 @@ import { useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
 import AuthBackground from '@/app/components/AuthBackground';
+import Toast from '@/app/components/Toast';
+
 export default function Register() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -10,6 +12,7 @@ export default function Register() {
   const [lastName, setLastName] = useState('');
   const [className, setClassName] = useState('');
   const [birthdate, setBirthdate] = useState('');
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const supabase = createClient();
   const router = useRouter();
 
@@ -17,7 +20,7 @@ export default function Register() {
     e.preventDefault();
 
     if (!email || !password || !firstName || !lastName || !className || !birthdate) {
-      alert('Bitte alle Felder ausfüllen!');
+      setToast({ message: 'Bitte alle Felder ausfüllen!', type: 'error' });
       return;
     }
 
@@ -27,12 +30,12 @@ export default function Register() {
     });
 
     if (authError) {
-      alert(`Auth-Fehler: ${authError.message}`);
+      setToast({ message: `Auth-Fehler: ${authError.message}`, type: 'error' });
       return;
     }
 
     if (!authData.user?.id) {
-      alert('Fehler: Keine User-ID erhalten');
+      setToast({ message: 'Fehler: Keine User-ID erhalten', type: 'error' });
       return;
     }
 
@@ -54,12 +57,12 @@ export default function Register() {
       .eq('id', userId);
 
     if (updateError) {
-      alert(`Fehler beim Speichern der Daten: ${updateError.message}`);
+      setToast({ message: `Fehler beim Speichern der Daten: ${updateError.message}`, type: 'error' });
       return;
     }
 
-    alert('Registrierung erfolgreich! Überprüfe deine Email zur Verifizierung.');
-    router.push('/login');
+    setToast({ message: 'Registrierung erfolgreich! Überprüfe deine Email zur Verifizierung.', type: 'success' });
+    setTimeout(() => router.push('/login'), 2000);
   };
 
   return (
@@ -180,6 +183,15 @@ export default function Register() {
         </div>
       </form>
       </div>
+
+      {/* Toast Notification */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   );
 }

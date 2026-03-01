@@ -37,7 +37,7 @@ export default function Home() {
               StudentOS
             </h1>
             <p className="text-xl md:text-2xl text-gray-300">
-              Gymnasium Weilheim i.OB
+              by Efe Dolaman
             </p>
           </div>
 
@@ -177,7 +177,7 @@ export default function Home() {
 
         {/* Footer */}
         <div className="mt-20 text-center text-gray-500 text-sm">
-          <p>© 2026 StudentOS - Gymnasium Weilheim i.OB</p>
+          <p>© 2026 StudentOS by Efe Dolaman</p>
         </div>
       </div>
     </div>
