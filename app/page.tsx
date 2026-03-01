@@ -177,7 +177,7 @@ export default function Home() {
 
         {/* Footer */}
         <div className="mt-20 text-center text-gray-500 text-sm">
-          <p>© 2026 StudentOS by Efe Dolaman</p>
+          <p>© {new Date().getFullYear()} StudentOS by Efe Dolaman</p>
         </div>
       </div>
     </div>
