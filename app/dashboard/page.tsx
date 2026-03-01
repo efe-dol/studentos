@@ -4,7 +4,7 @@ import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
 import AuthBackground from '@/app/components/AuthBackground';
 import Toast from '@/app/components/Toast';
-import { Settings, CheckSquare, BookOpen, BarChart3, Calendar, Zap, PencilSquare, RefreshCw } from 'lucide-react';
+import { Settings, CheckSquare, BookOpen, BarChart3, Calendar, Zap, Edit, RefreshCw } from 'lucide-react';
 
 type User = {
   id: string;
@@ -374,7 +374,7 @@ export default function Dashboard() {
             { id: 'dashboard', label: 'Dashboard', Icon: BarChart3 },
             { id: 'schedule', label: 'Stundenplan', Icon: BookOpen },
             { id: 'subjects', label: 'Fächer', Icon: BookOpen },
-            { id: 'homework', label: 'Hausaufgaben', Icon: PencilSquare },
+            { id: 'homework', label: 'Hausaufgaben', Icon: Edit },
             { id: 'substitutions', label: 'Vertretungen', Icon: RefreshCw },
           ].map((tab) => (
             <button
