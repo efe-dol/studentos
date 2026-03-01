@@ -12,7 +12,7 @@ export const createAdminClient = () => {
     missing.push('SUPABASE_SERVICE_ROLE_KEY');
   }
 
-  if (missing.length > 0) {
+  if (!supabaseUrl || !serviceRoleKey) {
     throw new Error(`Missing environment variable(s): ${missing.join(', ')}`);
   }
 
