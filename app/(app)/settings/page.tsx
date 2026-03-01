@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation';
 import AuthBackground from '@/app/components/common/AuthBackground';
 import LoadingScreen from '@/app/components/common/LoadingScreen';
 import Toast from '@/app/components/common/Toast';
-import SubjectListSettings from '@/app/components/grades/SubjectListSettings';
 import {
   ArrowLeft,
   Bell,
@@ -36,7 +35,7 @@ export default function SettingsPage() {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'profile' | 'subjects' | 'notifications'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'notifications'>('profile');
   const [savingProfile, setSavingProfile] = useState(false);
   const [pushSupported, setPushSupported] = useState(false);
   const [pushSubscribed, setPushSubscribed] = useState(false);
@@ -332,12 +331,8 @@ export default function SettingsPage() {
               Profil
             </button>
             <button
-              onClick={() => setActiveTab('subjects')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all border transform hover:scale-105 duration-200 ${
-                activeTab === 'subjects'
-                  ? 'bg-gradient-to-r from-blue-500/40 to-purple-500/40 border-blue-400/50 text-white shadow-lg shadow-blue-500/20 animate-in zoom-in-95 duration-300'
-                  : 'bg-white/5 border-white/10 hover:bg-white/10 text-gray-300'
-              }`}
+              onClick={() => router.push('/subjects')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all border transform hover:scale-105 duration-200 bg-white/5 border-white/10 hover:bg-white/10 text-gray-300`}
             >
               <BookOpen className="w-4 h-4" />
               Fächer
@@ -441,17 +436,6 @@ export default function SettingsPage() {
                   </button>
                 </div>
               </div>
-            </div>
-          )}
-
-          {/* Subjects Tab */}
-          {activeTab === 'subjects' && (
-            <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-8 animate-in fade-in slide-in-from-right-4 duration-400 animate-in zoom-in-95 duration-500 delay-100">
-              <h2 className="text-2xl font-semibold mb-6 flex items-center gap-2 animate-in fade-in slide-in-from-left-4 duration-500">
-                <BookOpen className="w-6 h-6" />
-                Fächer
-              </h2>
-              <SubjectListSettings />
             </div>
           )}
 
