@@ -1,10 +1,7 @@
 # StudentOS
 
-StudentOS ist eine von **Efe Dolaman** entwickelte Schul-App zur Organisation des Schulalltags.
+StudentOS ist eine von mir entwickelte Web-Application für den Schulalltag.
 
-## Zweck der App
-
-StudentOS ist für **private Zwecke im schulischen Umfeld** gedacht.
 Die App unterstützt unter anderem bei:
 
 - Aufgaben- und Terminverwaltung
@@ -20,7 +17,7 @@ npm run dev
 
 Die App ist anschließend unter `http://localhost:3000` erreichbar.
 
-## Push-Erinnerungen für Termine
+## Push-Erinnerungen für Termine (aktuell nicht verfügbar)
 
 Termine unterstützen Push-Benachrichtigungen 1 Woche und 1 Tag vor Startzeit.
 
