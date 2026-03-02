@@ -60,6 +60,10 @@ export default function PrivacyPage() {
                   Schutz- und Betriebsdaten (z. B. Rate-Limiting-Metadaten).
                 </p>
                 <p>
+                  Für das Formular „Feedback / Bug-Reports“ wird Formspree als externer Formular-Dienst eingesetzt. Dabei werden die
+                  eingegebenen Angaben Vorname, Nachname und Nachricht zur Bearbeitung des Anliegens verarbeitet und übertragen.
+                </p>
+                <p>
                   Technische Schutzmaßnahmen verarbeiten zudem Verbindungs-Metadaten wie IP-basierte Request-Zählungen
                   (Rate-Limiting im laufenden Serverprozess) und Sicherheitsheader (z. B. Autorisierungsheader für interne Cron-Prozesse).
                 </p>

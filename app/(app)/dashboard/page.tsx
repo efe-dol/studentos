@@ -6,7 +6,7 @@ import AuthBackground from '@/app/components/common/AuthBackground';
 import LoadingScreen from '@/app/components/common/LoadingScreen';
 import Toast from '@/app/components/common/Toast';
 import GradesTab from '@/app/components/grades/GradesTab';
-import { Settings, CheckSquare, BookOpen, BarChart3, Calendar, Zap, Edit, UtensilsCrossed, ListTodo, Shield, AlertTriangle, X, Clock, Plus, Trash2, Bell, BellOff, Share2, Download } from 'lucide-react';
+import { Settings, CheckSquare, BookOpen, BarChart3, Calendar, Zap, Edit, UtensilsCrossed, ListTodo, Shield, AlertTriangle, X, Clock, Plus, Trash2, Bell, BellOff, Share2, Download, Heart, Info } from 'lucide-react';
 
 type User = {
   id: string;
@@ -115,6 +115,7 @@ const WEEKDAY_ORDER: ScheduleEntry['weekday'][] = [
 ];
 
 const SCHEDULE_BREAK_OPTION = '__break__';
+const DASHBOARD_VERSION = 'v0.2.1';
 
 export default function Dashboard() {
   const FIXED_SCHOOL_NAME = 'Gymnasium Weilheim i.OB';
@@ -1338,6 +1339,13 @@ export default function Dashboard() {
             <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-6 card-stagger-5">
               <h2 className="text-xl font-semibold mb-4 flex items-center gap-2"><Zap className="w-5 h-5" /> Quick Links</h2>
               <div className="space-y-2">
+                <button
+                  onClick={() => router.push('/feedback')}
+                  className="w-full py-2 px-3 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 transition-all text-sm flex items-center justify-center gap-2"
+                >
+                  <AlertTriangle className="w-4 h-4" />
+                  Feedback / Bug-Reports
+                </button>
                 <a 
                   href="https://planner.gastro-smart.com/signage/16a1b964-0cc6-4cd2-a16f-ab77614fa7bf/weekly_menu/current"
                   target="_blank"
@@ -1347,6 +1355,19 @@ export default function Dashboard() {
                   <UtensilsCrossed className="w-4 h-4" />
                   Wochenmenü Mensa
                 </a>
+              </div>
+            </div>
+
+            {/* About */}
+            <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-6 card-stagger-5">
+              <h2 className="text-xl font-semibold mb-4 flex items-center gap-2"><Info className="w-5 h-5" /> About</h2>
+              <div className="p-4 rounded-xl bg-white/5 border border-white/10">
+                <p className="text-sm text-gray-200 flex items-center gap-2">
+                  Made with
+                  <Heart className="w-4 h-4 text-pink-400" />
+                  by Efe Dolaman
+                </p>
+                <p className="text-xs text-gray-400 mt-3">Version: {DASHBOARD_VERSION}</p>
               </div>
             </div>
           </div>

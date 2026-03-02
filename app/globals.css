@@ -362,6 +362,7 @@ button, a, input {
 .card-stagger-3 { opacity: 0; animation: cardSlideIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.3s forwards; }
 .card-stagger-4 { opacity: 0; animation: cardSlideIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.4s forwards; }
 .card-stagger-5 { opacity: 0; animation: cardSlideIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.5s forwards; }
+.card-stagger-6 { opacity: 0; animation: cardSlideIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.6s forwards; }
 
 @keyframes contentFadeIn {
   from {
@@ -534,7 +535,7 @@ button, a, input {
   .nav-item-animate { animation: none; }
   .icon-pulse { animation: none; }
   .gradient-animate { animation: none; }
-  .card-stagger-1, .card-stagger-2, .card-stagger-3, .card-stagger-4, .card-stagger-5 { animation: none; opacity: 1; }
+  .card-stagger-1, .card-stagger-2, .card-stagger-3, .card-stagger-4, .card-stagger-5, .card-stagger-6 { animation: none; opacity: 1; }
   .content-fade-in { animation: none; }
   .appointment-item-animate { animation: none; opacity: 1; }
   .animate-\[toastSlideOut_0\.28s_ease-in_forwards\] { animation: none; }

@@ -61,10 +61,11 @@ export async function updateSession(request: NextRequest) {
     const pathname = request.nextUrl.pathname
     const isLoginPage = pathname === '/login'
     const isRegisterPage = pathname === '/register'
+    const isHomePage = pathname === '/'
     const isPrivacyPage = pathname === '/privacy'
     const isImpressumPage = pathname === '/impressum'
     const isApiRoute = pathname.startsWith('/api/')
-    const isPublicWithoutSession = isLoginPage || isRegisterPage || isPrivacyPage || isImpressumPage
+    const isPublicWithoutSession = isHomePage || isLoginPage || isRegisterPage || isPrivacyPage || isImpressumPage
 
     if (profile?.is_blocked && !isLoginPage && !isPrivacyPage && !isImpressumPage) {
       const loginUrl = request.nextUrl.clone()
@@ -87,7 +88,7 @@ export async function updateSession(request: NextRequest) {
       return NextResponse.redirect(loginUrl)
     }
 
-    // Ohne Session ist nur /privacy sowie Login/Register öffentlich (API-Routen sind ausgenommen).
+    // Ohne Session sind /, /privacy, /impressum sowie Login/Register öffentlich (API-Routen sind ausgenommen).
     if (!session && !isPublicWithoutSession && !isApiRoute) {
       const loginUrl = request.nextUrl.clone()
       loginUrl.pathname = '/login'
