@@ -64,8 +64,19 @@ export async function updateSession(request: NextRequest) {
     const isHomePage = pathname === '/'
     const isPrivacyPage = pathname === '/privacy'
     const isImpressumPage = pathname === '/impressum'
+    const isPublicAssetRoute =
+      pathname === '/manifest.webmanifest' ||
+      pathname === '/sw.js' ||
+      pathname.startsWith('/icon') ||
+      pathname.startsWith('/apple-icon')
     const isApiRoute = pathname.startsWith('/api/')
-    const isPublicWithoutSession = isHomePage || isLoginPage || isRegisterPage || isPrivacyPage || isImpressumPage
+    const isPublicWithoutSession =
+      isHomePage ||
+      isLoginPage ||
+      isRegisterPage ||
+      isPrivacyPage ||
+      isImpressumPage ||
+      isPublicAssetRoute
 
     if (profile?.is_blocked && !isLoginPage && !isPrivacyPage && !isImpressumPage) {
       const loginUrl = request.nextUrl.clone()
