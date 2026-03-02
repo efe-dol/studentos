@@ -221,6 +221,24 @@ export default function Register() {
       </form>
       </div>
 
+      <div className="relative z-10 px-6 pb-6 text-center space-y-2 animate-[fadeIn_0.35s_ease-out]">
+        <div className="flex items-center justify-center gap-4">
+          <a
+            href="/impressum"
+            className="text-xs font-semibold text-gray-300 hover:text-white underline underline-offset-4"
+          >
+            Impressum
+          </a>
+          <a
+            href="/privacy"
+            className="text-xs font-semibold text-gray-300 hover:text-white underline underline-offset-4"
+          >
+            Datenschutz & Hinweise
+          </a>
+        </div>
+        <p className="text-xs text-gray-500">Copyright {new Date().getFullYear()} StudentOS by Efe Dolaman</p>
+      </div>
+
       {/* Toast Notification */}
       {toast && (
         <Toast

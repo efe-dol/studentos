@@ -1513,15 +1513,15 @@ export default function Dashboard() {
               )}
 
               <div className={`${showScheduleForm ? 'lg:col-span-2' : 'lg:col-span-3'} backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-5 card-stagger-2 transition-all duration-320 [transition-timing-function:cubic-bezier(0.22,1,0.36,1)]`}>
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-3">
                   <h2 className="text-lg font-semibold">Dein Stundenplan</h2>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs px-2 py-1 rounded-full bg-white/10 text-gray-300">
+                  <div className="w-full sm:w-auto flex flex-wrap items-center gap-2">
+                    <span className="text-xs px-2 py-1 rounded-full bg-white/10 text-gray-300 shrink-0">
                       {scheduleEntries.length} Einträge
                     </span>
                     <button
                       onClick={() => setScheduleEditMode((prev) => !prev)}
-                      className={`text-xs px-3 py-1.5 rounded-lg border transition-all duration-320 [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] ${
+                      className={`w-full sm:w-auto text-xs px-3 py-1.5 rounded-lg border transition-all duration-320 [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] ${
                         scheduleEditMode
                           ? 'bg-blue-500/20 border-blue-400/40 text-blue-200 hover:bg-blue-500/30'
                           : 'bg-white/5 border-white/15 text-gray-200 hover:bg-white/10'
@@ -1543,7 +1543,7 @@ export default function Dashboard() {
                       {creatingScheduleShare ? 'Link wird erstellt...' : 'Stundenplan teilen'}
                     </button>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                       <input
                         type="text"
                         value={scheduleShareInput}
@@ -1554,7 +1554,7 @@ export default function Dashboard() {
                       <button
                         onClick={handleImportSharedSchedule}
                         disabled={importingScheduleShare || !scheduleShareInput.trim()}
-                        className="py-2.5 px-3 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-1"
+                        className="w-full sm:w-auto py-2.5 px-3 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-1"
                       >
                         <Download className="w-4 h-4" />
                         {importingScheduleShare ? 'Import...' : 'Import'}

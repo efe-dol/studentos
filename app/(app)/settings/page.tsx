@@ -16,6 +16,8 @@ import {
   BookOpen,
   LogOut,
   GraduationCap,
+  FileText,
+  Building2,
 } from 'lucide-react';
 
 type Profile = {
@@ -674,8 +676,8 @@ export default function SettingsPage() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    <div className="flex items-center justify-between p-4 rounded-lg bg-white/5 border border-white/10 content-fade-in transform transition-all hover:bg-white/10 hover:scale-[1.01]">
-                      <div>
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 rounded-lg bg-white/5 border border-white/10 content-fade-in transition-all hover:bg-white/10">
+                      <div className="min-w-0">
                         <h3 className="font-medium text-white">Push-Benachrichtigungen</h3>
                         <p className="text-sm text-gray-400 mt-1">
                           Erhalte Benachrichtigungen zu Terminen und Meldungen direkt auf dein Gerät
@@ -684,7 +686,7 @@ export default function SettingsPage() {
                       <button
                         onClick={pushSubscribed ? handleDisablePush : handleEnablePush}
                         disabled={pushLoading}
-                        className={`px-6 py-2 rounded-lg font-medium transition-all flex items-center gap-2 transform hover:scale-105 active:scale-[0.95] duration-200 ${
+                        className={`w-full sm:w-auto px-6 py-2 rounded-lg font-medium transition-all flex items-center justify-center gap-2 hover:-translate-y-0.5 active:translate-y-0 duration-200 ${
                           pushSubscribed
                             ? 'bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 text-red-300'
                             : 'bg-green-500/20 hover:bg-green-500/30 border border-green-500/30 text-green-300'
@@ -889,7 +891,7 @@ export default function SettingsPage() {
             {isAdmin && (
               <button
                 onClick={() => router.push('/admin')}
-                className="w-full flex items-center justify-between p-4 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 transition-all group transform hover:scale-[1.02] active:scale-[0.98] duration-200"
+                className="w-full flex items-center justify-between p-4 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 transition-all group hover:-translate-y-0.5 active:translate-y-0 duration-200"
               >
                 <div className="flex items-center gap-3 text-left">
                   <Shield className="w-5 h-5 text-blue-400 group-hover:scale-110 transition-transform" />
@@ -903,8 +905,36 @@ export default function SettingsPage() {
             )}
 
             <button
+              onClick={() => router.push('/impressum')}
+              className="w-full flex items-center justify-between p-4 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 transition-all group hover:-translate-y-0.5 active:translate-y-0 duration-200"
+            >
+              <div className="flex items-center gap-3 text-left">
+                <Building2 className="w-5 h-5 text-gray-300 group-hover:scale-110 transition-transform" />
+                <div>
+                  <p className="font-medium text-white">Impressum</p>
+                  <p className="text-sm text-gray-400">Anbieterkennzeichnung und Kontaktangaben</p>
+                </div>
+              </div>
+              <span className="text-gray-400 group-hover:text-white transition-colors">→</span>
+            </button>
+
+            <button
+              onClick={() => router.push('/privacy')}
+              className="w-full flex items-center justify-between p-4 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 transition-all group hover:-translate-y-0.5 active:translate-y-0 duration-200"
+            >
+              <div className="flex items-center gap-3 text-left">
+                <FileText className="w-5 h-5 text-gray-300 group-hover:scale-110 transition-transform" />
+                <div>
+                  <p className="font-medium text-white">Datenschutz & Hinweise</p>
+                  <p className="text-sm text-gray-400">Informationen zur Datenverarbeitung und privaten Nutzung</p>
+                </div>
+              </div>
+              <span className="text-gray-400 group-hover:text-white transition-colors">→</span>
+            </button>
+
+            <button
               onClick={handleSignOut}
-              className="w-full flex items-center justify-between p-4 rounded-lg bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 transition-all group transform hover:scale-[1.02] active:scale-[0.98] duration-200"
+              className="w-full flex items-center justify-between p-4 rounded-lg bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 transition-all group hover:-translate-y-0.5 active:translate-y-0 duration-200"
             >
               <div className="flex items-center gap-3 text-left">
                 <LogOut className="w-5 h-5 text-red-400 group-hover:scale-110 transition-transform" />

@@ -61,8 +61,12 @@ export async function updateSession(request: NextRequest) {
     const pathname = request.nextUrl.pathname
     const isLoginPage = pathname === '/login'
     const isRegisterPage = pathname === '/register'
+    const isPrivacyPage = pathname === '/privacy'
+    const isImpressumPage = pathname === '/impressum'
+    const isApiRoute = pathname.startsWith('/api/')
+    const isPublicWithoutSession = isLoginPage || isRegisterPage || isPrivacyPage || isImpressumPage
 
-    if (profile?.is_blocked && !isLoginPage) {
+    if (profile?.is_blocked && !isLoginPage && !isPrivacyPage && !isImpressumPage) {
       const loginUrl = request.nextUrl.clone()
       loginUrl.pathname = '/login'
       loginUrl.searchParams.set('blocked', '1')
@@ -76,15 +80,15 @@ export async function updateSession(request: NextRequest) {
       return NextResponse.redirect(loginUrl)
     }
 
-    if (session && maintenanceMode && profile?.role !== 'admin' && !isLoginPage) {
+    if (session && maintenanceMode && profile?.role !== 'admin' && !isLoginPage && !isPrivacyPage && !isImpressumPage) {
       const loginUrl = request.nextUrl.clone()
       loginUrl.pathname = '/login'
       loginUrl.searchParams.set('maintenance', '1')
       return NextResponse.redirect(loginUrl)
     }
 
-    // Wenn auf protected routes und keine Session, redirect zu login
-    if (!session && (pathname.startsWith('/dashboard') || pathname.startsWith('/auth'))) {
+    // Ohne Session ist nur /privacy sowie Login/Register öffentlich (API-Routen sind ausgenommen).
+    if (!session && !isPublicWithoutSession && !isApiRoute) {
       const loginUrl = request.nextUrl.clone()
       loginUrl.pathname = '/login'
       return NextResponse.redirect(loginUrl)

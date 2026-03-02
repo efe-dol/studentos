@@ -373,9 +373,9 @@ export default function AdminPage() {
     <div className="h-[100dvh] overflow-y-auto overflow-x-hidden bg-gradient-to-b from-[#0a0a0a] via-[#121212] to-[#1a1a1a] text-white">
       <AuthBackground />
 
-      <div className="relative z-10 max-w-5xl mx-auto px-6 py-8">
+      <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 py-8">
         {/* Header */}
-        <div className="flex justify-between items-center mb-8 card-stagger-1">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8 card-stagger-1">
           <div className="flex items-center gap-4">
             <button
               onClick={() => router.push('/dashboard')}
@@ -398,7 +398,7 @@ export default function AdminPage() {
               resetForm();
               setShowAddModal(true);
             }}
-            className="px-4 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 transition-all flex items-center gap-2 font-medium hover:scale-105 hover:shadow-lg hover:shadow-blue-500/50"
+            className="w-full sm:w-auto sm:self-auto px-4 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 transition-all flex items-center justify-center gap-2 font-medium hover:scale-105 hover:shadow-lg hover:shadow-blue-500/50"
           >
             <Plus className="w-5 h-5" />
             Neue Meldung
@@ -433,14 +433,14 @@ export default function AdminPage() {
           </div>
 
           <div className="xl:col-span-2 backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-5 card-stagger-3">
-            <div className="flex items-center justify-between mb-4 gap-3">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-3">
               <h2 className="text-xl font-semibold flex items-center gap-2">
                 <Users className="w-5 h-5 text-blue-300" /> Nutzerverwaltung
               </h2>
               <button
                 onClick={fetchUsers}
                 disabled={usersLoading}
-                className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 text-sm transition-all disabled:opacity-60"
+                className="w-full sm:w-auto px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 text-sm transition-all disabled:opacity-60"
               >
                 {usersLoading ? 'Lädt...' : 'Aktualisieren'}
               </button>
