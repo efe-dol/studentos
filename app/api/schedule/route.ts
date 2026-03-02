@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { getOrCreateActiveSchoolYearId } from '@/lib/school-years/server';
 import { NextRequest, NextResponse } from 'next/server';
 
 const VALID_WEEKDAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
@@ -20,10 +21,13 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const activeSchoolYearId = await getOrCreateActiveSchoolYearId(supabase, user.id);
+
     const { data, error } = await supabase
       .from('schedule_entries')
-      .select('id, weekday, start_time, end_time, room, teacher, created_at, is_break, subject_id, subjects(id, name, color, type)')
+      .select('id, weekday, start_time, end_time, room, teacher, created_at, is_break, subject_id, subjects(id, name, color, type, default_room, default_teacher)')
       .eq('user_id', user.id)
+      .eq('school_year_id', activeSchoolYearId)
       .in('weekday', VALID_WEEKDAYS)
       .order('weekday', { ascending: true })
       .order('start_time', { ascending: true });
@@ -35,8 +39,9 @@ export async function GET() {
     if (error && isMissingIsBreakColumnError(error)) {
       const { data: fallbackData, error: fallbackError } = await supabase
         .from('schedule_entries')
-        .select('id, weekday, start_time, end_time, room, teacher, created_at, subject_id, subjects(id, name, color, type)')
+        .select('id, weekday, start_time, end_time, room, teacher, created_at, subject_id, subjects(id, name, color, type, default_room, default_teacher)')
         .eq('user_id', user.id)
+        .eq('school_year_id', activeSchoolYearId)
         .in('weekday', VALID_WEEKDAYS)
         .order('weekday', { ascending: true })
         .order('start_time', { ascending: true });
@@ -78,6 +83,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const activeSchoolYearId = await getOrCreateActiveSchoolYearId(supabase, user.id);
+
     const { weekday, start_time, end_time, room, teacher, subject_id, is_break } = await request.json();
     const isBreak = Boolean(is_break);
 
@@ -106,6 +113,7 @@ export async function POST(request: NextRequest) {
         .select('id')
         .eq('id', subject_id)
         .eq('user_id', user.id)
+        .eq('school_year_id', activeSchoolYearId)
         .single();
 
       if (subjectError || !subject) {
@@ -117,6 +125,7 @@ export async function POST(request: NextRequest) {
       .from('schedule_entries')
       .insert({
         user_id: user.id,
+        school_year_id: activeSchoolYearId,
         subject_id: isBreak ? null : subject_id,
         is_break: isBreak,
         weekday,
@@ -125,7 +134,7 @@ export async function POST(request: NextRequest) {
         room: room?.trim() || null,
         teacher: teacher?.trim() || null,
       })
-      .select('id, weekday, start_time, end_time, room, teacher, created_at, is_break, subject_id, subjects(id, name, color, type)')
+      .select('id, weekday, start_time, end_time, room, teacher, created_at, is_break, subject_id, subjects(id, name, color, type, default_room, default_teacher)')
       .single();
 
     if (error && !isMissingIsBreakColumnError(error)) {
@@ -147,6 +156,7 @@ export async function POST(request: NextRequest) {
         .from('schedule_entries')
         .insert({
           user_id: user.id,
+          school_year_id: activeSchoolYearId,
           subject_id,
           weekday,
           start_time,
@@ -154,7 +164,7 @@ export async function POST(request: NextRequest) {
           room: room?.trim() || null,
           teacher: teacher?.trim() || null,
         })
-        .select('id, weekday, start_time, end_time, room, teacher, created_at, subject_id, subjects(id, name, color, type)')
+        .select('id, weekday, start_time, end_time, room, teacher, created_at, subject_id, subjects(id, name, color, type, default_room, default_teacher)')
         .single();
 
       if (fallbackInsertError) {

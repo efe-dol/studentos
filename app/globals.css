@@ -34,13 +34,20 @@ html, body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
-  overflow-y: auto;
+  overflow-y: hidden;
   height: 100%;
+  min-height: 100dvh;
+  max-height: 100dvh;
   width: 100%;
   position: relative;
-  overscroll-behavior-y: contain;
-  touch-action: pan-y pan-x;
+  overscroll-behavior: none;
+  touch-action: pan-y;
   -webkit-overflow-scrolling: touch;
+}
+
+body > div:first-child {
+  height: 100%;
+  overflow-x: hidden;
 }
 
 /* Hardware acceleration for better performance */
@@ -65,7 +72,8 @@ input, textarea {
 }
 
 /* Fix distorted time-input text rendering (especially on Windows/WebKit) */
-input[type="time"] {
+input[type="time"],
+input[type="date"] {
   -webkit-transform: none !important;
   transform: none !important;
   -webkit-backface-visibility: visible;
@@ -76,15 +84,26 @@ input[type="time"] {
   font-feature-settings: "zero" 0, "tnum" 1;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.01em;
+  -webkit-appearance: none;
+  appearance: none;
+  line-height: 1.25;
+  min-height: 44px;
 }
 
 input[type="time"]::-webkit-datetime-edit,
-input[type="time"]::-webkit-datetime-edit-fields-wrapper {
+input[type="time"]::-webkit-datetime-edit-fields-wrapper,
+input[type="date"]::-webkit-datetime-edit,
+input[type="date"]::-webkit-datetime-edit-fields-wrapper {
   padding: 0;
+  display: inline-flex;
+  align-items: center;
 }
 
 input[type="time"]::-webkit-datetime-edit-hour-field,
-input[type="time"]::-webkit-datetime-edit-minute-field {
+input[type="time"]::-webkit-datetime-edit-minute-field,
+input[type="date"]::-webkit-datetime-edit-day-field,
+input[type="date"]::-webkit-datetime-edit-month-field,
+input[type="date"]::-webkit-datetime-edit-year-field {
   padding: 0 1px;
 }
 
@@ -233,6 +252,15 @@ button, a, input {
 .field textarea:focus + label,
 .field input:not(:placeholder-shown) + label,
 .field textarea:not(:placeholder-shown) + label {
+  top: -8px;
+  transform: none;
+  font-size: 12px;
+  color: rgba(255,255,255,0.85);
+  background: linear-gradient(to bottom, transparent 0%, transparent 40%, #1a1a1a 40%, #1a1a1a 60%, transparent 60%, transparent 100%);
+}
+
+.field input[type="date"] + label,
+.field input[type="time"] + label {
   top: -8px;
   transform: none;
   font-size: 12px;

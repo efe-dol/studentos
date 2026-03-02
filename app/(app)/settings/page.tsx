@@ -15,6 +15,7 @@ import {
   User,
   BookOpen,
   LogOut,
+  GraduationCap,
 } from 'lucide-react';
 
 type Profile = {
@@ -29,6 +30,19 @@ type Profile = {
 type User = {
   id: string;
   email?: string;
+};
+
+type SchoolYear = {
+  id: string;
+  label: string;
+  grade_level: number | null;
+  is_active: boolean;
+  created_at: string;
+};
+
+type SchoolYearDeleteConfirm = {
+  id: string;
+  label: string;
 };
 
 const extractFirstName = (value?: string) => {
@@ -46,13 +60,25 @@ export default function SettingsPage() {
   const [user, setUser] = useState<User | null>(null);
   const [, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'profile' | 'notifications' | 'subjects'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'notifications' | 'subjects' | 'school-years'>('profile');
   const [savingProfile, setSavingProfile] = useState(false);
   const [pushSupported, setPushSupported] = useState(false);
   const [pushSubscribed, setPushSubscribed] = useState(false);
   const [pushLoading, setPushLoading] = useState(false);
   const [subscriptionEndpoint, setSubscriptionEndpoint] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [schoolYears, setSchoolYears] = useState<SchoolYear[]>([]);
+  const [schoolYearsLoading, setSchoolYearsLoading] = useState(false);
+  const [creatingSchoolYear, setCreatingSchoolYear] = useState(false);
+  const [activatingSchoolYearId, setActivatingSchoolYearId] = useState<string | null>(null);
+  const [savingSchoolYearId, setSavingSchoolYearId] = useState<string | null>(null);
+  const [deletingSchoolYearId, setDeletingSchoolYearId] = useState<string | null>(null);
+  const [editingSchoolYearId, setEditingSchoolYearId] = useState<string | null>(null);
+  const [deleteConfirmYear, setDeleteConfirmYear] = useState<SchoolYearDeleteConfirm | null>(null);
+  const [newSchoolYearGrade, setNewSchoolYearGrade] = useState('');
+  const [newSchoolYearLabel, setNewSchoolYearLabel] = useState('');
+  const [editingSchoolYearNames, setEditingSchoolYearNames] = useState<Record<string, string>>({});
+  const [editingSchoolYearGrades, setEditingSchoolYearGrades] = useState<Record<string, string>>({});
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   // Profile form fields
@@ -244,6 +270,169 @@ export default function SettingsPage() {
     router.push('/login');
   };
 
+  const fetchSchoolYears = async () => {
+    setSchoolYearsLoading(true);
+    try {
+      const response = await fetch('/api/school-years');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Schuljahre konnten nicht geladen werden');
+      }
+
+      const data = await response.json();
+      const loadedYears = Array.isArray(data.schoolYears) ? data.schoolYears : [];
+      setSchoolYears(loadedYears);
+      setEditingSchoolYearNames(
+        loadedYears.reduce((acc: Record<string, string>, year: SchoolYear) => {
+          acc[year.id] = year.label;
+          return acc;
+        }, {})
+      );
+      setEditingSchoolYearGrades(
+        loadedYears.reduce((acc: Record<string, string>, year: SchoolYear) => {
+          acc[year.id] = year.grade_level ? String(year.grade_level) : '';
+          return acc;
+        }, {})
+      );
+    } catch (error: unknown) {
+      setToast({ message: error instanceof Error ? error.message : 'Unbekannter Fehler', type: 'error' });
+    } finally {
+      setSchoolYearsLoading(false);
+    }
+  };
+
+  const handleCreateSchoolYear = async () => {
+    const grade = newSchoolYearGrade.trim();
+    const parsedGrade = grade ? Number(grade) : null;
+
+    if (parsedGrade !== null && (!Number.isInteger(parsedGrade) || parsedGrade < 1 || parsedGrade > 13)) {
+      setToast({ message: 'Jahrgangsstufe muss zwischen 1 und 13 liegen', type: 'error' });
+      return;
+    }
+
+    setCreatingSchoolYear(true);
+    try {
+      const response = await fetch('/api/school-years', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          gradeLevel: parsedGrade,
+          label: newSchoolYearLabel.trim() || undefined,
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Schuljahr konnte nicht erstellt werden');
+      }
+
+      setNewSchoolYearGrade('');
+      setNewSchoolYearLabel('');
+      await fetchSchoolYears();
+      setToast({ message: 'Neues Schuljahr erstellt und aktiviert', type: 'success' });
+    } catch (error: unknown) {
+      setToast({ message: error instanceof Error ? error.message : 'Unbekannter Fehler', type: 'error' });
+    } finally {
+      setCreatingSchoolYear(false);
+    }
+  };
+
+  const handleActivateSchoolYear = async (schoolYearId: string) => {
+    setActivatingSchoolYearId(schoolYearId);
+    try {
+      const response = await fetch(`/api/school-years/${schoolYearId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ setActive: true }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Schuljahr konnte nicht aktiviert werden');
+      }
+
+      await fetchSchoolYears();
+      setToast({ message: 'Schuljahr gewechselt. Daten werden jetzt nach diesem Schuljahr gefiltert.', type: 'success' });
+    } catch (error: unknown) {
+      setToast({ message: error instanceof Error ? error.message : 'Unbekannter Fehler', type: 'error' });
+    } finally {
+      setActivatingSchoolYearId(null);
+    }
+  };
+
+  const handleSaveSchoolYear = async (schoolYear: SchoolYear) => {
+    const nextLabel = String(editingSchoolYearNames[schoolYear.id] || '').trim();
+    const nextGradeRaw = String(editingSchoolYearGrades[schoolYear.id] || '').trim();
+    const nextGrade = nextGradeRaw ? Number(nextGradeRaw) : null;
+
+    if (!nextLabel) {
+      setToast({ message: 'Bitte einen Namen für das Schuljahr eingeben.', type: 'error' });
+      return;
+    }
+
+    if (nextGrade !== null && (!Number.isInteger(nextGrade) || nextGrade < 1 || nextGrade > 13)) {
+      setToast({ message: 'Jahrgangsstufe muss zwischen 1 und 13 liegen.', type: 'error' });
+      return;
+    }
+
+    if (nextLabel === schoolYear.label && nextGrade === schoolYear.grade_level) {
+      setEditingSchoolYearId(null);
+      return;
+    }
+
+    setSavingSchoolYearId(schoolYear.id);
+    try {
+      const response = await fetch(`/api/school-years/${schoolYear.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          label: nextLabel,
+          gradeLevel: nextGrade,
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Schuljahr konnte nicht umbenannt werden');
+      }
+
+      await fetchSchoolYears();
+      setEditingSchoolYearId(null);
+      setToast({ message: 'Schuljahr aktualisiert.', type: 'success' });
+    } catch (error: unknown) {
+      setToast({ message: error instanceof Error ? error.message : 'Unbekannter Fehler', type: 'error' });
+    } finally {
+      setSavingSchoolYearId(null);
+    }
+  };
+
+  const handleDeleteSchoolYear = async (schoolYear: SchoolYear) => {
+    if (schoolYears.length <= 1) {
+      setToast({ message: 'Das letzte Schuljahr kann nicht gelöscht werden.', type: 'error' });
+      return;
+    }
+
+    setDeletingSchoolYearId(schoolYear.id);
+    try {
+      const response = await fetch(`/api/school-years/${schoolYear.id}`, {
+        method: 'DELETE',
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Schuljahr konnte nicht gelöscht werden');
+      }
+
+      await fetchSchoolYears();
+      setDeleteConfirmYear(null);
+      setToast({ message: 'Schuljahr gelöscht.', type: 'success' });
+    } catch (error: unknown) {
+      setToast({ message: error instanceof Error ? error.message : 'Unbekannter Fehler', type: 'error' });
+    } finally {
+      setDeletingSchoolYearId(null);
+    }
+  };
+
   useEffect(() => {
     const getSession = async () => {
       try {
@@ -282,6 +471,8 @@ export default function SettingsPage() {
           setEditBirthdate(profileData.birthdate || '');
         }
 
+        await fetchSchoolYears();
+
         setLoading(false);
       } catch (error) {
         console.error('Session error:', error);
@@ -318,7 +509,7 @@ export default function SettingsPage() {
           </div>
 
           {/* Tab Navigation */}
-          <div className="flex gap-3 flex-wrap card-stagger-2">
+          <div className="flex gap-3 flex-wrap justify-center sm:justify-start card-stagger-2">
             <button
               onClick={() => setActiveTab('profile')}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all border hover:scale-105 ${
@@ -352,10 +543,21 @@ export default function SettingsPage() {
               <Bell className="w-4 h-4" />
               Benachrichtigungen
             </button>
+            <button
+              onClick={() => setActiveTab('school-years')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all border hover:scale-105 ${
+                activeTab === 'school-years'
+                  ? 'bg-gradient-to-r from-blue-500/40 to-purple-500/40 border-blue-400/50 text-white shadow-lg shadow-blue-500/20'
+                  : 'bg-white/5 border-white/10 hover:bg-white/10 text-gray-300'
+              }`}
+            >
+              <GraduationCap className="w-4 h-4" />
+              Schuljahre
+            </button>
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto pt-6 pb-8">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden pt-6 pb-8">
 
           {/* Profile Tab */}
           {activeTab === 'profile' && (
@@ -527,6 +729,161 @@ export default function SettingsPage() {
             </div>
           )}
 
+          {activeTab === 'school-years' && (
+            <div className="space-y-6 card-stagger-3">
+              <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-8 content-fade-in">
+                <h2 className="text-2xl font-semibold mb-6 flex items-center gap-2">
+                  <GraduationCap className="w-6 h-6" />
+                  Schuljahre
+                </h2>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
+                  <input
+                    type="number"
+                    min="1"
+                    max="13"
+                    value={newSchoolYearGrade}
+                    onChange={(e) => setNewSchoolYearGrade(e.target.value)}
+                    className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 focus:outline-none focus:border-blue-500/40"
+                    placeholder="Jahrgangsstufe (z.B. 10)"
+                  />
+                  <input
+                    type="text"
+                    value={newSchoolYearLabel}
+                    onChange={(e) => setNewSchoolYearLabel(e.target.value)}
+                    className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 focus:outline-none focus:border-blue-500/40"
+                    placeholder="Label optional (z.B. Schuljahr 2026/27)"
+                  />
+                  <button
+                    onClick={handleCreateSchoolYear}
+                    disabled={creatingSchoolYear}
+                    className="w-full py-3 rounded-lg bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-medium transition-all disabled:opacity-50"
+                  >
+                    {creatingSchoolYear ? 'Erstellen...' : 'Neues Schuljahr erstellen'}
+                  </button>
+                </div>
+
+                {schoolYearsLoading ? (
+                  <p className="text-sm text-gray-400">Schuljahre werden geladen...</p>
+                ) : schoolYears.length === 0 ? (
+                  <p className="text-sm text-gray-400">Noch keine Schuljahre vorhanden.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {schoolYears.map((year) => (
+                      <div
+                        key={year.id}
+                        className="p-4 rounded-lg bg-white/5 border border-white/10 flex items-center justify-between gap-3"
+                      >
+                        <div className="flex-1 min-w-0">
+                          {editingSchoolYearId === year.id ? (
+                            <div className="space-y-2">
+                              <input
+                                type="text"
+                                value={editingSchoolYearNames[year.id] || ''}
+                                onChange={(e) =>
+                                  setEditingSchoolYearNames((prev) => ({
+                                    ...prev,
+                                    [year.id]: e.target.value,
+                                  }))
+                                }
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    handleSaveSchoolYear(year);
+                                  }
+                                }}
+                                className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 focus:outline-none focus:border-blue-500/40 text-sm"
+                                placeholder="Name"
+                              />
+                              <input
+                                type="number"
+                                min="1"
+                                max="13"
+                                value={editingSchoolYearGrades[year.id] || ''}
+                                onChange={(e) =>
+                                  setEditingSchoolYearGrades((prev) => ({
+                                    ...prev,
+                                    [year.id]: e.target.value,
+                                  }))
+                                }
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    handleSaveSchoolYear(year);
+                                  }
+                                }}
+                                className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 focus:outline-none focus:border-blue-500/40 text-sm"
+                                placeholder="Jahrgangsstufe (1-13)"
+                              />
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={() => handleSaveSchoolYear(year)}
+                                  disabled={savingSchoolYearId === year.id}
+                                  className="px-3 py-2 rounded-lg text-xs bg-white/10 border border-white/20 hover:bg-white/20 transition-all disabled:opacity-50"
+                                >
+                                  {savingSchoolYearId === year.id ? 'Speichern...' : 'Speichern'}
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setEditingSchoolYearId(null);
+                                    setEditingSchoolYearNames((prev) => ({ ...prev, [year.id]: year.label }));
+                                    setEditingSchoolYearGrades((prev) => ({
+                                      ...prev,
+                                      [year.id]: year.grade_level ? String(year.grade_level) : '',
+                                    }));
+                                  }}
+                                  className="px-3 py-2 rounded-lg text-xs bg-white/5 border border-white/15 hover:bg-white/10 transition-all"
+                                >
+                                  Abbrechen
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <>
+                              <p className="font-medium text-white">{year.label}</p>
+                              <p className="text-xs text-gray-400 mt-1">
+                                {year.grade_level ? `${year.grade_level}. Jahrgangsstufe` : 'Ohne Jahrgangsstufe'}
+                              </p>
+                              <div className="flex items-center gap-2 mt-2">
+                                <button
+                                  onClick={() => setEditingSchoolYearId(year.id)}
+                                  className="px-3 py-2 rounded-lg text-xs bg-white/10 border border-white/20 hover:bg-white/20 transition-all"
+                                >
+                                  Bearbeiten
+                                </button>
+                                <button
+                                  onClick={() => setDeleteConfirmYear({ id: year.id, label: year.label })}
+                                  disabled={deletingSchoolYearId === year.id || schoolYears.length <= 1}
+                                  className="px-3 py-2 rounded-lg text-xs bg-red-500/20 border border-red-500/40 text-red-300 hover:bg-red-500/30 transition-all disabled:opacity-50"
+                                >
+                                  {deletingSchoolYearId === year.id ? 'Löschen...' : 'Löschen'}
+                                </button>
+                              </div>
+                            </>
+                          )}
+                        </div>
+
+                        {year.is_active ? (
+                          <span className="px-3 py-1 rounded-full text-xs bg-green-500/20 border border-green-500/40 text-green-300">
+                            Aktiv
+                          </span>
+                        ) : (
+                          <button
+                            onClick={() => handleActivateSchoolYear(year.id)}
+                            disabled={activatingSchoolYearId === year.id}
+                            className="px-3 py-1.5 rounded-lg text-xs bg-white/10 border border-white/20 hover:bg-white/20 transition-all disabled:opacity-50"
+                          >
+                            {activatingSchoolYearId === year.id ? 'Wechsel...' : 'Aktivieren'}
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Admin & Account Section */}
           <div className="mt-8 space-y-4 border-t border-white/10 pt-8 card-stagger-4">
             {isAdmin && (
@@ -569,6 +926,44 @@ export default function SettingsPage() {
           type={toast.type}
           onClose={() => setToast(null)}
         />
+      )}
+
+      {deleteConfirmYear && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[80] modal-backdrop-animate">
+          <div className="bg-gradient-to-b from-[#1a1a1a] to-[#0f0f0f] border border-white/10 rounded-2xl p-6 max-w-md w-full mx-4 modal-animate">
+            <h2 className="text-xl font-semibold mb-3">Schuljahr löschen?</h2>
+            <p className="text-gray-300 leading-relaxed">
+              Möchtest du das Schuljahr "{deleteConfirmYear.label}" wirklich löschen? Alle zugehörigen Daten in diesem Schuljahr werden entfernt.
+            </p>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => {
+                  if (deletingSchoolYearId) return;
+                  setDeleteConfirmYear(null);
+                }}
+                disabled={Boolean(deletingSchoolYearId)}
+                className="flex-1 py-2.5 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 transition-all disabled:opacity-60"
+              >
+                Abbrechen
+              </button>
+              <button
+                onClick={async () => {
+                  const year = schoolYears.find((item) => item.id === deleteConfirmYear.id);
+                  if (!year) {
+                    setDeleteConfirmYear(null);
+                    return;
+                  }
+                  await handleDeleteSchoolYear(year);
+                }}
+                disabled={Boolean(deletingSchoolYearId)}
+                className="flex-1 py-2.5 rounded-lg transition-all disabled:opacity-60 bg-red-500/80 hover:bg-red-500 text-white"
+              >
+                {deletingSchoolYearId ? 'Bitte warten...' : 'Löschen'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

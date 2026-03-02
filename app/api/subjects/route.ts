@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { getOrCreateActiveSchoolYearId } from '@/lib/school-years/server';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(request: NextRequest) {
@@ -10,10 +11,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const activeSchoolYearId = await getOrCreateActiveSchoolYearId(supabase, user.id);
+
     const { data, error } = await supabase
       .from('subjects')
       .select('*')
       .eq('user_id', user.id)
+      .eq('school_year_id', activeSchoolYearId)
       .order('type', { ascending: false })
       .order('name', { ascending: true });
 
@@ -39,7 +43,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { name, type, color } = await request.json();
+    const activeSchoolYearId = await getOrCreateActiveSchoolYearId(supabase, user.id);
+
+    const { name, type, color, default_room, default_teacher } = await request.json();
 
     if (!name || !type || !color) {
       return NextResponse.json(
@@ -59,9 +65,12 @@ export async function POST(request: NextRequest) {
       .from('subjects')
       .insert({
         user_id: user.id,
+        school_year_id: activeSchoolYearId,
         name,
         type,
         color,
+        default_room: default_room?.trim() || null,
+        default_teacher: default_teacher?.trim() || null,
       })
       .select()
       .single();

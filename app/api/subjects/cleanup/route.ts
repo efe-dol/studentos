@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { getOrCreateActiveSchoolYearId } from '@/lib/school-years/server';
 import { NextRequest, NextResponse } from 'next/server';
 
 /**
@@ -17,6 +18,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const activeSchoolYearId = await getOrCreateActiveSchoolYearId(supabase, user.id);
+
     const deletedIds: string[] = [];
     const errors: string[] = [];
 
@@ -24,7 +27,8 @@ export async function POST(request: NextRequest) {
     const { data: subjects, error: fetchError } = await supabase
       .from('subjects')
       .select('*')
-      .eq('user_id', user.id);
+      .eq('user_id', user.id)
+      .eq('school_year_id', activeSchoolYearId);
 
     if (fetchError) {
       return NextResponse.json({ error: fetchError.message }, { status: 400 });
@@ -47,13 +51,12 @@ export async function POST(request: NextRequest) {
         const { error: deleteError } = await supabase
           .from('subjects')
           .delete()
-          .eq('id', subject.id);
+          .eq('id', subject.id)
+          .eq('school_year_id', activeSchoolYearId);
 
         if (deleteError) {
-          errors.push(`Failed to delete ${subject.id}: ${deleteError.message}`);
         } else {
           deletedIds.push(subject.id);
-          console.log(`Deleted bad subject: ${subject.id}`);
         }
       } catch (err) {
         errors.push(`Error deleting ${subject.id}: ${err instanceof Error ? err.message : 'Unknown'}`);

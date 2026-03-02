@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { getOrCreateActiveSchoolYearId } from '@/lib/school-years/server';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function PATCH(
@@ -13,6 +14,8 @@ export async function PATCH(
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const activeSchoolYearId = await getOrCreateActiveSchoolYearId(supabase, user.id);
 
     const body = await request.json();
     const { title, description, due_date, priority, is_completed } = body;
@@ -29,6 +32,7 @@ export async function PATCH(
       .update(updateData)
       .eq('id', id)
       .eq('user_id', user.id)
+      .eq('school_year_id', activeSchoolYearId)
       .select()
       .single();
 
@@ -59,11 +63,14 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const activeSchoolYearId = await getOrCreateActiveSchoolYearId(supabase, user.id);
+
     const { error } = await supabase
       .from('todos')
       .delete()
       .eq('id', id)
-      .eq('user_id', user.id);
+      .eq('user_id', user.id)
+      .eq('school_year_id', activeSchoolYearId);
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });

@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { getOrCreateActiveSchoolYearId } from '@/lib/school-years/server';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function DELETE(
@@ -17,11 +18,14 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const activeSchoolYearId = await getOrCreateActiveSchoolYearId(supabase, user.id);
+
     const { error } = await supabase
       .from('schedule_entries')
       .delete()
       .eq('id', id)
-      .eq('user_id', user.id);
+      .eq('user_id', user.id)
+      .eq('school_year_id', activeSchoolYearId);
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });

@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { getOrCreateActiveSchoolYearId } from '@/lib/school-years/server';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function PUT(
@@ -13,7 +14,9 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { name, type, color } = await request.json();
+    const activeSchoolYearId = await getOrCreateActiveSchoolYearId(supabase, user.id);
+
+    const { name, type, color, default_room, default_teacher } = await request.json();
     const { id } = await params;
 
     // Verify ownership
@@ -21,6 +24,7 @@ export async function PUT(
       .from('subjects')
       .select('user_id')
       .eq('id', id)
+      .eq('school_year_id', activeSchoolYearId)
       .single();
 
     if (!subject || subject.user_id !== user.id) {
@@ -31,11 +35,14 @@ export async function PUT(
     if (name !== undefined) updateData.name = name;
     if (type !== undefined) updateData.type = type;
     if (color !== undefined) updateData.color = color;
+    if (default_room !== undefined) updateData.default_room = default_room?.trim() || null;
+    if (default_teacher !== undefined) updateData.default_teacher = default_teacher?.trim() || null;
 
     const { data, error } = await supabase
       .from('subjects')
       .update(updateData)
       .eq('id', id)
+      .eq('school_year_id', activeSchoolYearId)
       .select()
       .single();
 
@@ -64,6 +71,8 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const activeSchoolYearId = await getOrCreateActiveSchoolYearId(supabase, user.id);
+
     const { id } = await params;
 
     // Verify ownership
@@ -71,6 +80,7 @@ export async function DELETE(
       .from('subjects')
       .select('user_id')
       .eq('id', id)
+      .eq('school_year_id', activeSchoolYearId)
       .single();
 
     if (!subject || subject.user_id !== user.id) {
@@ -80,7 +90,8 @@ export async function DELETE(
     const { error } = await supabase
       .from('subjects')
       .delete()
-      .eq('id', id);
+      .eq('id', id)
+      .eq('school_year_id', activeSchoolYearId);
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 400 });

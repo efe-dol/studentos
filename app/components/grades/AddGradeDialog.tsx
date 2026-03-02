@@ -9,6 +9,9 @@ interface AddGradeDialogProps {
   subjectId?: string;
   onClose: () => void;
   onAdd: (gradeData: AddGradeData) => Promise<void>;
+  initialData?: AddGradeData | null;
+  title?: string;
+  submitLabel?: string;
 }
 
 export type AddGradeData = {
@@ -33,6 +36,9 @@ export default function AddGradeDialog({
   subjectId,
   onClose,
   onAdd,
+  initialData,
+  title,
+  submitLabel,
 }: AddGradeDialogProps) {
   const [gradeInput, setGradeInput] = useState('');
   const [gradeType, setGradeType] = useState<GradeType>('MÜNDLICH');
@@ -58,6 +64,23 @@ export default function AddGradeDialog({
     setShowAdvanced(false);
     setError('');
   }, []);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    if (initialData) {
+      setGradeInput(String(initialData.grade));
+      setGradeType(initialData.gradeType);
+      setWeight(initialData.weight ?? 1.0);
+      setDescription(initialData.description || '');
+      setGradeDate(initialData.gradeDate ? String(initialData.gradeDate).split('T')[0] : new Date().toISOString().split('T')[0]);
+      setShowAdvanced(Boolean(initialData.description) || (initialData.weight ?? 1.0) !== 1.0);
+      setError('');
+      return;
+    }
+
+    resetForm();
+  }, [isOpen, initialData, resetForm]);
 
   const handleClose = useCallback((force = false) => {
     if (isSubmitting && !force) return;
@@ -120,7 +143,7 @@ export default function AddGradeDialog({
             <div className="p-2 bg-gradient-to-br from-yellow-500/20 to-orange-500/20 rounded-lg flex-shrink-0">
               <Star className="w-5 h-5 text-yellow-400" />
             </div>
-            <h2 className="text-lg sm:text-xl font-bold text-white truncate">Note eintragen</h2>
+            <h2 className="text-lg sm:text-xl font-bold text-white truncate">{title || 'Note eintragen'}</h2>
           </div>
           <button
             onClick={() => handleClose()}
@@ -268,7 +291,7 @@ export default function AddGradeDialog({
               className="flex-1 px-4 py-2.5 sm:py-3 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 rounded-lg text-white font-medium text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={isSubmitting}
             >
-              {isSubmitting ? 'Wird gespeichert...' : 'Speichern'}
+              {isSubmitting ? 'Wird gespeichert...' : submitLabel || 'Speichern'}
             </button>
           </div>
         </form>

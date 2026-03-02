@@ -76,7 +76,11 @@ export default function HomeworkPage() {
   const supabase = createClient();
   const router = useRouter();
 
-  const loadData = async () => {
+  const isAbortError = (error: unknown) => {
+    return error instanceof DOMException && error.name === 'AbortError';
+  };
+
+  const loadData = async (signal?: AbortSignal) => {
     try {
       const {
         data: { session },
@@ -88,8 +92,8 @@ export default function HomeworkPage() {
       }
 
       const [subjectsResponse, homeworkResponse] = await Promise.all([
-        fetch('/api/subjects'),
-        fetch('/api/homework'),
+        fetch('/api/subjects', { signal }),
+        fetch('/api/homework', { signal }),
       ]);
 
       if (!subjectsResponse.ok || !homeworkResponse.ok) {
@@ -109,6 +113,7 @@ export default function HomeworkPage() {
 
       setLoading(false);
     } catch (error) {
+      if (isAbortError(error)) return;
       console.error(error);
       setToast({ message: 'Fehler beim Laden der Hausaufgaben', type: 'error' });
       setLoading(false);
@@ -116,7 +121,9 @@ export default function HomeworkPage() {
   };
 
   useEffect(() => {
-    loadData();
+    const controller = new AbortController();
+    loadData(controller.signal);
+    return () => controller.abort();
   }, []);
 
   const handleCreateHomework = async () => {
@@ -186,7 +193,7 @@ export default function HomeworkPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#0a0a0a] via-[#121212] to-[#1a1a1a] text-white">
+    <div className="h-[100dvh] overflow-y-auto overflow-x-hidden bg-gradient-to-b from-[#0a0a0a] via-[#121212] to-[#1a1a1a] text-white">
       <AuthBackground />
 
       <div className="relative z-10 max-w-5xl mx-auto px-6 py-8">

@@ -31,6 +31,7 @@ export default function GradesTab() {
     error: gradesError,
     fetchGrades,
     addGrade,
+    updateGrade,
     deleteGrade,
   } = useGrades();
 
@@ -66,6 +67,16 @@ export default function GradesTab() {
       gradeData.description,
       gradeData.gradeDate
     );
+  };
+
+  const handleUpdateGrade = async (gradeId: string, gradeData: AddGradeData) => {
+    await updateGrade(gradeId, {
+      grade: gradeData.grade,
+      gradeType: gradeData.gradeType,
+      weight: gradeData.weight,
+      description: gradeData.description,
+      gradeDate: gradeData.gradeDate,
+    });
   };
 
   const handleSelectSubject = (subjectId: string) => {
@@ -112,6 +123,7 @@ export default function GradesTab() {
           grades={grades}
           onBack={handleBack}
           onAddGrade={handleAddGrade}
+          onUpdateGrade={handleUpdateGrade}
           onDeleteGrade={deleteGrade}
         />
       </div>

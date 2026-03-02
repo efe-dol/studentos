@@ -1,12 +1,12 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import AuthBackground from '@/app/components/common/AuthBackground';
 import LoadingScreen from '@/app/components/common/LoadingScreen';
 import Toast from '@/app/components/common/Toast';
 import GradesTab from '@/app/components/grades/GradesTab';
-import { Settings, CheckSquare, BookOpen, BarChart3, Calendar, Zap, Edit, UtensilsCrossed, ListTodo, Shield, AlertTriangle, X, Clock, Plus, Trash2, Bell, BellOff } from 'lucide-react';
+import { Settings, CheckSquare, BookOpen, BarChart3, Calendar, Zap, Edit, UtensilsCrossed, ListTodo, Shield, AlertTriangle, X, Clock, Plus, Trash2, Bell, BellOff, Share2, Download } from 'lucide-react';
 
 type User = {
   id: string;
@@ -52,6 +52,8 @@ type HomeworkSubject = {
   name: string;
   color: string;
   type: 'HAUPTFACH' | 'NEBENFACH';
+  default_room?: string | null;
+  default_teacher?: string | null;
 };
 
 type SubjectRelation = HomeworkSubject | HomeworkSubject[] | null;
@@ -149,6 +151,10 @@ export default function Dashboard() {
   const [scheduleSubjectId, setScheduleSubjectId] = useState('');
   const [scheduleRoom, setScheduleRoom] = useState('');
   const [scheduleTeacher, setScheduleTeacher] = useState('');
+  const [scheduleRoomTeacherOverride, setScheduleRoomTeacherOverride] = useState(false);
+  const [scheduleShareInput, setScheduleShareInput] = useState('');
+  const [creatingScheduleShare, setCreatingScheduleShare] = useState(false);
+  const [importingScheduleShare, setImportingScheduleShare] = useState(false);
   const [savingSchedule, setSavingSchedule] = useState(false);
   const [deletingScheduleId, setDeletingScheduleId] = useState<string | null>(null);
   const [scheduleEditMode, setScheduleEditMode] = useState(false);
@@ -219,9 +225,13 @@ export default function Dashboard() {
     return toDisplayName(metadataFirstName) || 'Nutzer';
   };
 
-  const fetchAppointments = async (limit = 5) => {
+  const isAbortError = (error: unknown) => {
+    return error instanceof DOMException && error.name === 'AbortError';
+  };
+
+  const fetchAppointments = async (limit = 5, signal?: AbortSignal) => {
     try {
-      const response = await fetch(`/api/appointments?upcoming=true&limit=${limit}`);
+      const response = await fetch(`/api/appointments?upcoming=true&limit=${limit}`, { signal });
       if (!response.ok) {
         return;
       }
@@ -229,13 +239,14 @@ export default function Dashboard() {
       const data = await response.json();
       setAppointments(data.appointments || []);
     } catch (error) {
+      if (isAbortError(error)) return;
       console.error('Error fetching appointments:', error);
     }
   };
 
-  const fetchHomework = async (limit = 5) => {
+  const fetchHomework = async (limit = 5, signal?: AbortSignal) => {
     try {
-      const response = await fetch(`/api/homework?limit=${limit}`);
+      const response = await fetch(`/api/homework?limit=${limit}`, { signal });
       if (!response.ok) {
         return;
       }
@@ -243,13 +254,26 @@ export default function Dashboard() {
       const data = await response.json();
       setHomework(data.homework || []);
     } catch (error) {
+      if (isAbortError(error)) return;
       console.error('Error fetching homework:', error);
     }
   };
 
-  const fetchHomeworkSubjects = async () => {
+  const fetchHomeworkSubjects = async (force = false, signal?: AbortSignal) => {
+    if (!force && homeworkSubjects.length > 0) {
+      if (!homeworkSubjectId) {
+        setHomeworkSubjectId(homeworkSubjects[0].id);
+      }
+
+      if (!scheduleSubjectId) {
+        setScheduleSubjectId(homeworkSubjects[0].id);
+      }
+
+      return;
+    }
+
     try {
-      const response = await fetch('/api/subjects');
+      const response = await fetch('/api/subjects', { signal });
       if (!response.ok) {
         return;
       }
@@ -266,13 +290,14 @@ export default function Dashboard() {
         setScheduleSubjectId(loadedSubjects[0].id);
       }
     } catch (error) {
+      if (isAbortError(error)) return;
       console.error('Error fetching homework subjects:', error);
     }
   };
 
-  const fetchScheduleEntries = async () => {
+  const fetchScheduleEntries = async (signal?: AbortSignal) => {
     try {
-      const response = await fetch('/api/schedule');
+      const response = await fetch('/api/schedule', { signal });
       if (!response.ok) {
         return;
       }
@@ -281,6 +306,7 @@ export default function Dashboard() {
       const loadedEntries = data.schedule || [];
       setScheduleEntries(loadedEntries);
     } catch (error) {
+      if (isAbortError(error)) return;
       console.error('Error fetching schedule entries:', error);
     }
   };
@@ -291,6 +317,7 @@ export default function Dashboard() {
     setScheduleEndTime('');
     setScheduleRoom('');
     setScheduleTeacher('');
+    setScheduleRoomTeacherOverride(false);
   };
 
   const handleCreateScheduleEntry = async () => {
@@ -322,8 +349,8 @@ export default function Dashboard() {
           end_time: scheduleEndTime,
           is_break: isBreak,
           subject_id: isBreak ? null : scheduleSubjectId,
-          room: scheduleRoom,
-          teacher: scheduleTeacher,
+          room: !isBreak && scheduleRoomTeacherOverride ? scheduleRoom : null,
+          teacher: !isBreak && scheduleRoomTeacherOverride ? scheduleTeacher : null,
         }),
       });
 
@@ -365,6 +392,93 @@ export default function Dashboard() {
       setToast({ message, type: 'error' });
     } finally {
       setDeletingScheduleId(null);
+    }
+  };
+
+  const extractScheduleShareToken = (rawValue: string) => {
+    const value = String(rawValue || '').trim();
+    if (!value) return null;
+
+    try {
+      const url = new URL(value);
+      const tokenFromQuery = url.searchParams.get('scheduleShare');
+      if (tokenFromQuery) return tokenFromQuery;
+      const pathnameParts = url.pathname.split('/').filter(Boolean);
+      return pathnameParts[pathnameParts.length - 1] || null;
+    } catch {
+      return value;
+    }
+  };
+
+  const handleCreateScheduleShare = async () => {
+    if (scheduleEntries.length === 0) {
+      setToast({ message: 'Du hast keinen Stundenplan zum Teilen.', type: 'error' });
+      return;
+    }
+
+    setCreatingScheduleShare(true);
+    try {
+      const response = await fetch('/api/schedule-share', { method: 'POST' });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Share-Link konnte nicht erstellt werden.');
+      }
+
+      const shareUrl = String(data.shareUrl || '');
+      if (!shareUrl) {
+        throw new Error('Ungültiger Share-Link.');
+      }
+
+      setScheduleShareInput(shareUrl);
+
+      if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(shareUrl);
+        setToast({ message: 'Share-Link kopiert. Andere Nutzer können den Stundenplan jetzt importieren.', type: 'success' });
+      } else {
+        setToast({ message: 'Share-Link erstellt. Bitte manuell kopieren.', type: 'success' });
+      }
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unbekannter Fehler';
+      setToast({ message, type: 'error' });
+    } finally {
+      setCreatingScheduleShare(false);
+    }
+  };
+
+  const handleImportSharedSchedule = async () => {
+    const token = extractScheduleShareToken(scheduleShareInput);
+
+    if (!token) {
+      setToast({ message: 'Bitte einen gültigen Share-Link einfügen.', type: 'error' });
+      return;
+    }
+
+    setImportingScheduleShare(true);
+    try {
+      const response = await fetch('/api/schedule-share/import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Import fehlgeschlagen.');
+      }
+
+      await Promise.all([fetchHomeworkSubjects(true), fetchScheduleEntries()]);
+      setActiveTab('schedule');
+      setToast({
+        message: `${data.importedEntries || 0} Stundenplan-Einträge importiert (${data.importedSubjects || 0} neue Fächer). Noten wurden nicht übernommen.`,
+        type: 'success',
+      });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unbekannter Fehler';
+      setToast({ message, type: 'error' });
+    } finally {
+      setImportingScheduleShare(false);
     }
   };
 
@@ -683,6 +797,8 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
+    const controller = new AbortController();
+
     const getSession = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
@@ -692,7 +808,6 @@ export default function Dashboard() {
         }
 
         setUser(session.user);
-        console.log('Session user:', session.user);
 
         // Fetch profile
         const { data: profileData, error: profileError } = await supabase
@@ -714,12 +829,10 @@ export default function Dashboard() {
             school: FIXED_SCHOOL_NAME,
           };
 
-          console.log('Profile data:', profileData);
           setProfile(normalizedProfile);
           setIsAdmin(profileData.role === 'admin');
         } else {
             const fallbackFirstName = getFallbackFirstName(session.user);
-              console.log('No profile data found');
               // Fallback: setze einen Namen aus Auth-Metadaten (oder E-Mail)
               setProfile({ 
                 first_name: fallbackFirstName, 
@@ -730,44 +843,48 @@ export default function Dashboard() {
               });
             }
 
-        // Fetch todos
-        try {
-          const response = await fetch('/api/todos?limit=5&sortBy=priority&onlyIncomplete=true');
-          if (response.ok) {
-            const data = await response.json();
-            setTodos(data.todos || []);
-          }
-        } catch (error) {
-          console.error('Error fetching todos:', error);
-        }
-
-        // Fetch appointments
-        await fetchAppointments(5);
-
-        // Fetch homework preview for dashboard
-        await fetchHomework(5);
-
-        // Fetch maintenance messages
-        try {
-          const response = await fetch('/api/maintenance');
-          if (response.ok) {
-            const data = await response.json();
-            setMaintenanceMessages(data.messages || []);
-          }
-        } catch (error) {
-          console.error('Error fetching maintenance messages:', error);
-        }
-
-        // Fetch grades for dashboard performance widget
-        try {
-          const response = await fetch('/api/grades');
-          if (response.ok) {
-            const data = await response.json();
-            setGrades(Array.isArray(data) ? data : []);
-          }
-        } catch (error) {
-          console.error('Error fetching grades:', error);
-        }
+        await Promise.allSettled([
+          (async () => {
+            try {
+              const response = await fetch('/api/todos?limit=5&sortBy=priority&onlyIncomplete=true', {
+                signal: controller.signal,
+              });
+              if (response.ok) {
+                const data = await response.json();
+                setTodos(data.todos || []);
+              }
+            } catch (error) {
+              if (isAbortError(error)) return;
+              console.error('Error fetching todos:', error);
+            }
+          })(),
+          fetchAppointments(5, controller.signal),
+          fetchHomework(5, controller.signal),
+          (async () => {
+            try {
+              const response = await fetch('/api/maintenance', { signal: controller.signal });
+              if (response.ok) {
+                const data = await response.json();
+                setMaintenanceMessages(data.messages || []);
+              }
+            } catch (error) {
+              if (isAbortError(error)) return;
+              console.error('Error fetching maintenance messages:', error);
+            }
+          })(),
+          (async () => {
+            try {
+              const response = await fetch('/api/grades', { signal: controller.signal });
+              if (response.ok) {
+                const data = await response.json();
+                setGrades(Array.isArray(data) ? data : []);
+              }
+            } catch (error) {
+              if (isAbortError(error)) return;
+              console.error('Error fetching grades:', error);
+            }
+          })(),
+        ]);
 
         
         setLoading(false);
@@ -778,26 +895,40 @@ export default function Dashboard() {
     };
 
     getSession();
+    return () => controller.abort();
   }, []);
 
   useEffect(() => {
+    const controller = new AbortController();
+
     if (activeTab === 'appointments') {
-      fetchAppointments(100);
+      fetchAppointments(100, controller.signal);
     }
 
     if (activeTab === 'homework') {
-      fetchHomework(100);
-      fetchHomeworkSubjects();
+      fetchHomework(100, controller.signal);
+      fetchHomeworkSubjects(false, controller.signal);
     }
 
     if (activeTab === 'schedule') {
-      fetchScheduleEntries();
-      fetchHomeworkSubjects();
+      fetchScheduleEntries(controller.signal);
+      fetchHomeworkSubjects(false, controller.signal);
     }
+
+    return () => controller.abort();
   }, [activeTab]);
 
   useEffect(() => {
     initializePushState();
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const token = new URLSearchParams(window.location.search).get('scheduleShare');
+    if (!token) return;
+
+    setActiveTab('schedule');
+    setScheduleShareInput(token);
   }, []);
 
   useEffect(() => {
@@ -848,55 +979,72 @@ export default function Dashboard() {
     return new Date().toLocaleDateString('de-DE', options);
   };
 
-  const upcomingAppointments = appointments
-    .filter((appointment) => new Date(appointment.starts_at).getTime() >= Date.now())
-    .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime());
+  const upcomingAppointments = useMemo(
+    () =>
+      appointments
+        .filter((appointment) => new Date(appointment.starts_at).getTime() >= Date.now())
+        .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime()),
+    [appointments]
+  );
 
-  const nowStartOfDay = new Date();
-  nowStartOfDay.setHours(0, 0, 0, 0);
+  const upcomingHomework = useMemo(() => {
+    const nowStartOfDay = new Date();
+    nowStartOfDay.setHours(0, 0, 0, 0);
 
-  const upcomingHomework = homework
-    .filter((item) => new Date(item.due_date).getTime() >= nowStartOfDay.getTime())
-    .sort((a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime());
+    return homework
+      .filter((item) => new Date(item.due_date).getTime() >= nowStartOfDay.getTime())
+      .sort((a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime());
+  }, [homework]);
 
   const gradeCount = grades.length;
-  const weightedAverage =
-    gradeCount === 0
-      ? null
-      : grades.reduce((sum, grade) => sum + grade.grade * (grade.weight || 1), 0) /
-        grades.reduce((sum, grade) => sum + (grade.weight || 1), 0);
-  const averageLabel =
-    weightedAverage === null
-      ? '—'
-      : weightedAverage <= 2
-      ? 'Sehr gut'
-      : weightedAverage <= 3
-      ? 'Gut'
-      : weightedAverage <= 4
-      ? 'Befriedigend'
-      : weightedAverage <= 5
-      ? 'Ausreichend'
-      : 'Verbesserbar';
+  const weightedAverage = useMemo(
+    () =>
+      gradeCount === 0
+        ? null
+        : grades.reduce((sum, grade) => sum + grade.grade * (grade.weight || 1), 0) /
+          grades.reduce((sum, grade) => sum + (grade.weight || 1), 0),
+    [gradeCount, grades]
+  );
 
-  const gradeBucketCounts = GRADE_BUCKETS.map((bucket) => {
-    const count = grades.filter((grade) => Math.min(6, Math.max(1, Math.round(grade.grade))) === bucket.key).length;
-    return { ...bucket, count };
-  });
+  const averageLabel = useMemo(() => {
+    if (weightedAverage === null) return '—';
+    if (weightedAverage <= 2) return 'Sehr gut';
+    if (weightedAverage <= 3) return 'Gut';
+    if (weightedAverage <= 4) return 'Befriedigend';
+    if (weightedAverage <= 5) return 'Ausreichend';
+    return 'Verbesserbar';
+  }, [weightedAverage]);
 
-  const gradeBucketStats = gradeBucketCounts.map((bucket) => ({
-    ...bucket,
-    percentage: gradeCount === 0 ? 0 : Math.round((bucket.count / gradeCount) * 100),
-  }));
+  const gradeBucketCounts = useMemo(
+    () =>
+      GRADE_BUCKETS.map((bucket) => {
+        const count = grades.filter((grade) => Math.min(6, Math.max(1, Math.round(grade.grade))) === bucket.key).length;
+        return { ...bucket, count };
+      }),
+    [grades]
+  );
 
-  const dominantBucket =
-    gradeCount === 0
-      ? null
-      : gradeBucketStats.reduce((max, bucket) => (bucket.count > max.count ? bucket : max), gradeBucketStats[0]);
+  const gradeBucketStats = useMemo(
+    () =>
+      gradeBucketCounts.map((bucket) => ({
+        ...bucket,
+        percentage: gradeCount === 0 ? 0 : Math.round((bucket.count / gradeCount) * 100),
+      })),
+    [gradeBucketCounts, gradeCount]
+  );
+
+  const dominantBucket = useMemo(
+    () =>
+      gradeCount === 0
+        ? null
+        : gradeBucketStats.reduce((max, bucket) => (bucket.count > max.count ? bucket : max), gradeBucketStats[0]),
+    [gradeCount, gradeBucketStats]
+  );
 
   const donutRadius = 56;
   const donutStroke = 16;
   const donutCircumference = 2 * Math.PI * donutRadius;
-  const donutSegments = (() => {
+  const donutSegments = useMemo(() => {
     if (gradeCount === 0) return [] as Array<{ key: number; color: string; dashArray: string; dashOffset: number }>;
 
     let cumulative = 0;
@@ -913,23 +1061,44 @@ export default function Dashboard() {
         cumulative += segmentLength;
         return segment;
       });
-  })();
+  }, [gradeBucketCounts, gradeCount, donutCircumference]);
 
-  const previewAppointments = upcomingAppointments.slice(0, 5);
-  const previewHomework = upcomingHomework.slice(0, 5);
-  const orderedScheduleEntries = [...scheduleEntries].sort((a, b) => {
-    const weekdayDelta = WEEKDAY_ORDER.indexOf(a.weekday) - WEEKDAY_ORDER.indexOf(b.weekday);
-    if (weekdayDelta !== 0) return weekdayDelta;
-    return a.start_time.localeCompare(b.start_time);
-  });
+  const previewAppointments = useMemo(() => upcomingAppointments.slice(0, 5), [upcomingAppointments]);
+  const previewHomework = useMemo(() => upcomingHomework.slice(0, 5), [upcomingHomework]);
 
-  const groupedScheduleEntries = WEEKDAY_ORDER.map((weekday) => ({
-    weekday,
-    label: WEEKDAY_LABELS[weekday],
-    entries: orderedScheduleEntries.filter((entry) => entry.weekday === weekday),
-  }));
-  const selectedScheduleSubject = homeworkSubjects.find((subject) => subject.id === scheduleSubjectId);
+  const orderedScheduleEntries = useMemo(
+    () =>
+      [...scheduleEntries].sort((a, b) => {
+        const weekdayDelta = WEEKDAY_ORDER.indexOf(a.weekday) - WEEKDAY_ORDER.indexOf(b.weekday);
+        if (weekdayDelta !== 0) return weekdayDelta;
+        return a.start_time.localeCompare(b.start_time);
+      }),
+    [scheduleEntries]
+  );
+
+  const groupedScheduleEntries = useMemo(
+    () =>
+      WEEKDAY_ORDER.map((weekday) => ({
+        weekday,
+        label: WEEKDAY_LABELS[weekday],
+        entries: orderedScheduleEntries.filter((entry) => entry.weekday === weekday),
+      })),
+    [orderedScheduleEntries]
+  );
+
+  const selectedScheduleSubject = useMemo(
+    () => homeworkSubjects.find((subject) => subject.id === scheduleSubjectId),
+    [homeworkSubjects, scheduleSubjectId]
+  );
   const isBreakSelected = scheduleSubjectId === SCHEDULE_BREAK_OPTION;
+
+  useEffect(() => {
+    if (isBreakSelected) {
+      setScheduleRoomTeacherOverride(false);
+      setScheduleRoom('');
+      setScheduleTeacher('');
+    }
+  }, [isBreakSelected]);
 
   if (loading) {
     return <LoadingScreen />;
@@ -983,7 +1152,7 @@ export default function Dashboard() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-y-auto z-10 max-w-7xl mx-auto w-full px-6 py-8 pb-24">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden z-10 max-w-7xl mx-auto w-full px-6 py-8 pb-24">
         {activeTab === 'dashboard' && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* ToDo's */}
@@ -1215,7 +1384,7 @@ export default function Dashboard() {
 
                   <div className="modal-field-2">
                     <p className="text-xs text-gray-400 mb-2">Zeitraum (von/bis)</p>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <input
                         type="time"
                         value={scheduleStartTime}
@@ -1268,27 +1437,61 @@ export default function Dashboard() {
                     )}
                   </div>
 
-                  <div className="modal-field-4">
-                    <label className="block text-sm font-medium mb-2 text-gray-300">Raum</label>
-                    <input
-                      type="text"
-                      value={scheduleRoom}
-                      onChange={(event) => setScheduleRoom(event.target.value)}
-                      placeholder="z.B. B204"
-                      className="w-full p-3 rounded-xl bg-white/5 border border-white/10 focus:border-cyan-500 focus:outline-none text-sm"
-                    />
-                  </div>
+                  {!isBreakSelected && (
+                    <>
+                      {!isBreakSelected && (
+                        <>
+                          <div className="modal-field-4 rounded-xl border border-white/10 bg-white/5 p-3">
+                            <label className="flex items-center justify-between gap-3 text-sm text-gray-200">
+                              <span>Raum/Lehrkraft abweichend</span>
+                              <input
+                                type="checkbox"
+                                checked={scheduleRoomTeacherOverride}
+                                onChange={(event) => {
+                                  const checked = event.target.checked;
+                                  setScheduleRoomTeacherOverride(checked);
+                                  if (!checked) {
+                                    setScheduleRoom('');
+                                    setScheduleTeacher('');
+                                  }
+                                }}
+                                className="h-4 w-4 rounded border-white/20 bg-black/40"
+                              />
+                            </label>
+                            <p className="text-xs text-gray-400 mt-1">
+                              Standardwerte kommen aus dem Fach.
+                            </p>
+                          </div>
 
-                  <div className="modal-field-5">
-                    <label className="block text-sm font-medium mb-2 text-gray-300">Lehrkraft</label>
-                    <input
-                      type="text"
-                      value={scheduleTeacher}
-                      onChange={(event) => setScheduleTeacher(event.target.value)}
-                      placeholder="z.B. Frau Müller"
-                      className="w-full p-3 rounded-xl bg-white/5 border border-white/10 focus:border-cyan-500 focus:outline-none text-sm"
-                    />
-                  </div>
+                          {scheduleRoomTeacherOverride && (
+                            <>
+                              <div className="modal-field-5">
+                                <label className="block text-sm font-medium mb-2 text-gray-300">Raum (abweichend)</label>
+                                <input
+                                  type="text"
+                                  value={scheduleRoom}
+                                  onChange={(event) => setScheduleRoom(event.target.value)}
+                                  placeholder={`Standard: ${selectedScheduleSubject?.default_room || '—'}`}
+                                  className="w-full p-3 rounded-xl bg-white/5 border border-white/10 focus:border-cyan-500 focus:outline-none text-sm"
+                                />
+                              </div>
+
+                              <div className="modal-field-5">
+                                <label className="block text-sm font-medium mb-2 text-gray-300">Lehrkraft (abweichend)</label>
+                                <input
+                                  type="text"
+                                  value={scheduleTeacher}
+                                  onChange={(event) => setScheduleTeacher(event.target.value)}
+                                  placeholder={`Standard: ${selectedScheduleSubject?.default_teacher || '—'}`}
+                                  className="w-full p-3 rounded-xl bg-white/5 border border-white/10 focus:border-cyan-500 focus:outline-none text-sm"
+                                />
+                              </div>
+                            </>
+                          )}
+                        </>
+                      )}
+                    </>
+                  )}
 
                   <div className="modal-buttons-animate">
                     <button
@@ -1329,6 +1532,37 @@ export default function Dashboard() {
                   </div>
                 </div>
 
+                {scheduleEditMode && (
+                  <div className="mb-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <button
+                      onClick={handleCreateScheduleShare}
+                      disabled={creatingScheduleShare || scheduleEntries.length === 0}
+                      className="w-full py-2.5 px-3 rounded-lg bg-white/5 border border-white/15 text-gray-200 hover:bg-white/10 transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    >
+                      <Share2 className="w-4 h-4" />
+                      {creatingScheduleShare ? 'Link wird erstellt...' : 'Stundenplan teilen'}
+                    </button>
+
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={scheduleShareInput}
+                        onChange={(event) => setScheduleShareInput(event.target.value)}
+                        placeholder="Share-Link einfügen"
+                        className="w-full p-2.5 rounded-lg bg-white/5 border border-white/10 focus:border-cyan-500 focus:outline-none text-sm"
+                      />
+                      <button
+                        onClick={handleImportSharedSchedule}
+                        disabled={importingScheduleShare || !scheduleShareInput.trim()}
+                        className="py-2.5 px-3 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-1"
+                      >
+                        <Download className="w-4 h-4" />
+                        {importingScheduleShare ? 'Import...' : 'Import'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 {scheduleEntries.length === 0 ? (
                   <div className="p-6 rounded-xl bg-white/5 border border-white/10 text-center text-gray-400 text-sm">
                     Noch keine Stundenplan-Einträge vorhanden.
@@ -1350,6 +1584,8 @@ export default function Dashboard() {
                             {day.entries.map((entry, entryIndex) => {
                               const relatedSubject = getRelatedSubject(entry.subjects);
                               const isBreakEntry = Boolean(entry.is_break);
+                              const displayRoom = entry.room || relatedSubject?.default_room || '—';
+                              const displayTeacher = entry.teacher || relatedSubject?.default_teacher || '—';
                               return (
                               <div
                                 key={entry.id}
@@ -1384,10 +1620,12 @@ export default function Dashboard() {
                                     <p className="text-xs text-gray-300">
                                       {formatScheduleTime(entry.start_time)} - {formatScheduleTime(entry.end_time)}
                                     </p>
-                                    <div className="text-xs text-gray-400 mt-1 flex flex-wrap gap-3">
-                                      <span>Raum: {entry.room || '—'}</span>
-                                      <span>Lehrkraft: {entry.teacher || '—'}</span>
-                                    </div>
+                                    {!isBreakEntry && (
+                                      <div className="text-xs text-gray-400 mt-1 flex flex-wrap gap-3">
+                                        <span>Raum: {displayRoom}</span>
+                                        <span>Lehrkraft: {displayTeacher}</span>
+                                      </div>
+                                    )}
                                   </div>
                                   {scheduleEditMode && (
                                     <button

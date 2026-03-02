@@ -6,6 +6,8 @@ export interface Subject {
   name: string;
   type: 'HAUPTFACH' | 'NEBENFACH';
   color: string;
+  default_room: string | null;
+  default_teacher: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -38,7 +40,6 @@ export const useSubjects = () => {
         throw new Error(errorData.error || 'Failed to fetch subjects');
       }
       const data = await response.json();
-      console.log('Fetched subjects:', data);
       setSubjects(Array.isArray(data) ? data : []);
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Unknown error';
@@ -51,20 +52,31 @@ export const useSubjects = () => {
   }, []);
 
   const addSubject = useCallback(
-    async (name: string, type: 'HAUPTFACH' | 'NEBENFACH', color: string) => {
+    async (
+      name: string,
+      type: 'HAUPTFACH' | 'NEBENFACH',
+      color: string,
+      defaultRoom?: string,
+      defaultTeacher?: string
+    ) => {
       setError(null);
       try {
         const response = await fetch('/api/subjects', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, type, color }),
+          body: JSON.stringify({
+            name,
+            type,
+            color,
+            default_room: defaultRoom,
+            default_teacher: defaultTeacher,
+          }),
         });
         if (!response.ok) {
           const errorData = await response.json();
           throw new Error(errorData.error || 'Failed to add subject');
         }
         const data = await response.json();
-        console.log('Added subject:', data);
         setSubjects((prev) => [...prev, data]);
         return data;
       } catch (err) {
@@ -91,7 +103,6 @@ export const useSubjects = () => {
           throw new Error(errorData.error || 'Failed to update subject');
         }
         const data = await response.json();
-        console.log('Updated subject:', data);
         setSubjects((prev) => prev.map((s) => (s.id === id ? data : s)));
         return data;
       } catch (err) {
@@ -114,7 +125,6 @@ export const useSubjects = () => {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to delete subject');
       }
-      console.log('Deleted subject:', id);
       setSubjects((prev) => prev.filter((s) => s.id !== id));
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Unknown error';
@@ -135,7 +145,6 @@ export const useSubjects = () => {
         throw new Error(errorData.error || 'Cleanup failed');
       }
       const data = await response.json();
-      console.log('Cleanup result:', data);
       // Fetch subjects again to refresh
       await fetchSubjects();
       return data;
@@ -178,7 +187,6 @@ export const useGrades = () => {
         throw new Error(errorData.error || 'Failed to fetch grades');
       }
       const data = await response.json();
-      console.log('Fetched grades:', data);
       setGrades(Array.isArray(data) ? data : []);
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Unknown error';
@@ -218,7 +226,6 @@ export const useGrades = () => {
           throw new Error(errorData.error || 'Failed to add grade');
         }
         const data = await response.json();
-        console.log('Added grade:', data);
         setGrades((prev) => [...prev, data]);
         return data;
       } catch (err) {
@@ -232,7 +239,16 @@ export const useGrades = () => {
   );
 
   const updateGrade = useCallback(
-    async (id: string, updates: Partial<Grade>) => {
+    async (
+      id: string,
+      updates: {
+        grade?: number;
+        gradeType?: Grade['grade_type'];
+        weight?: number;
+        description?: string;
+        gradeDate?: string;
+      }
+    ) => {
       setError(null);
       try {
         const response = await fetch(`/api/grades/${id}`, {
@@ -245,7 +261,6 @@ export const useGrades = () => {
           throw new Error(errorData.error || 'Failed to update grade');
         }
         const data = await response.json();
-        console.log('Updated grade:', data);
         setGrades((prev) => prev.map((g) => (g.id === id ? data : g)));
         return data;
       } catch (err) {
@@ -268,7 +283,6 @@ export const useGrades = () => {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to delete grade');
       }
-      console.log('Deleted grade:', id);
       setGrades((prev) => prev.filter((g) => g.id !== id));
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Unknown error';

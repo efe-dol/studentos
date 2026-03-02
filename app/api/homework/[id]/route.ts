@@ -1,15 +1,21 @@
 import { createClient } from '@/lib/supabase/server';
+import { getOrCreateActiveSchoolYearId } from '@/lib/school-years/server';
 import { NextRequest, NextResponse } from 'next/server';
 
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 
-const cleanupOldHomework = async (supabase: Awaited<ReturnType<typeof createClient>>, userId: string) => {
+const cleanupOldHomework = async (
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+  schoolYearId: string
+) => {
   const cutoff = new Date(Date.now() - THIRTY_DAYS_MS).toISOString();
 
   await supabase
     .from('homework')
     .delete()
     .eq('user_id', userId)
+    .eq('school_year_id', schoolYearId)
     .lt('created_at', cutoff);
 };
 
@@ -29,13 +35,16 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    await cleanupOldHomework(supabase, user.id);
+    const activeSchoolYearId = await getOrCreateActiveSchoolYearId(supabase, user.id);
+
+    await cleanupOldHomework(supabase, user.id, activeSchoolYearId);
 
     const { error } = await supabase
       .from('homework')
       .delete()
       .eq('id', id)
-      .eq('user_id', user.id);
+      .eq('user_id', user.id)
+      .eq('school_year_id', activeSchoolYearId);
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });

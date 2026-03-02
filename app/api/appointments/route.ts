@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { upsertAppointmentReminders } from '@/lib/appointments/reminders';
+import { getOrCreateActiveSchoolYearId } from '@/lib/school-years/server';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(request: NextRequest) {
@@ -14,6 +15,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const activeSchoolYearId = await getOrCreateActiveSchoolYearId(supabase, user.id);
+
     const { searchParams } = new URL(request.url);
     const limit = searchParams.get('limit');
     const onlyUpcoming = searchParams.get('upcoming') === 'true';
@@ -21,7 +24,8 @@ export async function GET(request: NextRequest) {
     let query = supabase
       .from('appointments')
       .select('*')
-      .eq('user_id', user.id);
+      .eq('user_id', user.id)
+      .eq('school_year_id', activeSchoolYearId);
 
     if (onlyUpcoming) {
       query = query.gte('starts_at', new Date().toISOString());
@@ -57,6 +61,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const activeSchoolYearId = await getOrCreateActiveSchoolYearId(supabase, user.id);
+
     const body = await request.json();
     const { name, description, starts_at, color } = body;
 
@@ -71,6 +77,7 @@ export async function POST(request: NextRequest) {
       .from('appointments')
       .insert({
         user_id: user.id,
+        school_year_id: activeSchoolYearId,
         name,
         description: description || null,
         starts_at,

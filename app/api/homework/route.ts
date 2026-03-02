@@ -1,15 +1,21 @@
 import { createClient } from '@/lib/supabase/server';
+import { getOrCreateActiveSchoolYearId } from '@/lib/school-years/server';
 import { NextRequest, NextResponse } from 'next/server';
 
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 
-const cleanupOldHomework = async (supabase: Awaited<ReturnType<typeof createClient>>, userId: string) => {
+const cleanupOldHomework = async (
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+  schoolYearId: string
+) => {
   const cutoff = new Date(Date.now() - THIRTY_DAYS_MS).toISOString();
 
   await supabase
     .from('homework')
     .delete()
     .eq('user_id', userId)
+    .eq('school_year_id', schoolYearId)
     .lt('created_at', cutoff);
 };
 
@@ -25,7 +31,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    await cleanupOldHomework(supabase, user.id);
+    const activeSchoolYearId = await getOrCreateActiveSchoolYearId(supabase, user.id);
+
+    await cleanupOldHomework(supabase, user.id, activeSchoolYearId);
 
     const { searchParams } = new URL(request.url);
     const limit = searchParams.get('limit');
@@ -34,6 +42,7 @@ export async function GET(request: NextRequest) {
       .from('homework')
       .select('id, task, homework_date, due_date, priority, created_at, subject_id, subjects(id, name, color, type)')
       .eq('user_id', user.id)
+      .eq('school_year_id', activeSchoolYearId)
       .order('due_date', { ascending: true })
       .order('created_at', { ascending: false });
 
@@ -65,7 +74,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    await cleanupOldHomework(supabase, user.id);
+    const activeSchoolYearId = await getOrCreateActiveSchoolYearId(supabase, user.id);
+
+    await cleanupOldHomework(supabase, user.id, activeSchoolYearId);
 
     const { task, homework_date, due_date, priority, subject_id } = await request.json();
 
@@ -82,6 +93,7 @@ export async function POST(request: NextRequest) {
       .select('id')
       .eq('id', subject_id)
       .eq('user_id', user.id)
+      .eq('school_year_id', activeSchoolYearId)
       .single();
 
     if (subjectError || !subject) {
@@ -92,6 +104,7 @@ export async function POST(request: NextRequest) {
       .from('homework')
       .insert({
         user_id: user.id,
+        school_year_id: activeSchoolYearId,
         task: String(task).trim(),
         homework_date,
         due_date,

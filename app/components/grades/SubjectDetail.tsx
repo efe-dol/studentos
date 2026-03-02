@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Edit2 } from 'lucide-react';
 import { Subject, Grade } from '@/lib/grades/hooks';
 import type { AddGradeData } from './AddGradeDialog';
 import {
@@ -18,6 +18,7 @@ interface SubjectDetailProps {
   grades: Grade[];
   onBack: () => void;
   onAddGrade: (gradeData: AddGradeData) => Promise<void>;
+  onUpdateGrade: (gradeId: string, gradeData: AddGradeData) => Promise<void>;
   onDeleteGrade: (gradeId: string) => Promise<void>;
   isLoading?: boolean;
 }
@@ -27,11 +28,15 @@ export default function SubjectDetail({
   grades,
   onBack,
   onAddGrade,
+  onUpdateGrade,
   onDeleteGrade,
   isLoading = false,
 }: SubjectDetailProps) {
   const [showAddGradeDialog, setShowAddGradeDialog] = useState(false);
+  const [editingGrade, setEditingGrade] = useState<Grade | null>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteConfirmGradeId, setDeleteConfirmGradeId] = useState<string | null>(null);
 
   const handleBackClick = () => {
     onBack();
@@ -48,6 +53,21 @@ export default function SubjectDetail({
       await onDeleteGrade(gradeId);
     } finally {
       setDeletingId(null);
+    }
+  };
+
+  const handleStartEdit = (grade: Grade) => {
+    setEditingGrade(grade);
+  };
+
+  const handleUpdateGrade = async (gradeData: AddGradeData) => {
+    if (!editingGrade) return;
+    setIsUpdating(true);
+    try {
+      await onUpdateGrade(editingGrade.id, gradeData);
+      setEditingGrade(null);
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -181,14 +201,24 @@ export default function SubjectDetail({
                     </p>
                   )}
                 </div>
-                <button
-                  onClick={() => handleDeleteGrade(grade.id)}
-                  disabled={deletingId === grade.id || isLoading}
-                  className="p-2 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all opacity-0 sm:opacity-0 group-hover:opacity-100 flex-shrink-0"
-                  title="Löschen"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+                <div className="flex items-center gap-1 opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 transition-opacity flex-shrink-0">
+                  <button
+                    onClick={() => handleStartEdit(grade)}
+                    disabled={Boolean(deletingId) || isUpdating || isLoading}
+                    className="p-2 text-gray-400 hover:text-blue-300 hover:bg-blue-500/10 rounded-lg transition-all"
+                    title="Bearbeiten"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => setDeleteConfirmGradeId(grade.id)}
+                    disabled={deletingId === grade.id || isUpdating || isLoading}
+                    className="p-2 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
+                    title="Löschen"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -211,6 +241,61 @@ export default function SubjectDetail({
         onClose={() => setShowAddGradeDialog(false)}
         onAdd={onAddGrade}
       />
+
+      <AddGradeDialog
+        isOpen={Boolean(editingGrade)}
+        subjectId={subject.id}
+        onClose={() => setEditingGrade(null)}
+        onAdd={handleUpdateGrade}
+        initialData={
+          editingGrade
+            ? {
+                grade: editingGrade.grade,
+                gradeType: editingGrade.grade_type,
+                weight: editingGrade.weight,
+                description: editingGrade.description,
+                gradeDate: editingGrade.grade_date,
+              }
+            : null
+        }
+        title="Note bearbeiten"
+        submitLabel="Änderungen speichern"
+      />
+
+      {deleteConfirmGradeId && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[80] modal-backdrop-animate">
+          <div className="bg-gradient-to-b from-[#1a1a1a] to-[#0f0f0f] border border-white/10 rounded-2xl p-6 max-w-md w-full mx-4 modal-animate">
+            <h2 className="text-xl font-semibold mb-3">Note löschen?</h2>
+            <p className="text-gray-300 leading-relaxed">
+              Möchtest du diese Note wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.
+            </p>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => {
+                  if (deletingId) return;
+                  setDeleteConfirmGradeId(null);
+                }}
+                disabled={Boolean(deletingId)}
+                className="flex-1 py-2.5 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 transition-all disabled:opacity-60"
+              >
+                Abbrechen
+              </button>
+              <button
+                onClick={async () => {
+                  if (!deleteConfirmGradeId) return;
+                  await handleDeleteGrade(deleteConfirmGradeId);
+                  setDeleteConfirmGradeId(null);
+                }}
+                disabled={Boolean(deletingId)}
+                className="flex-1 py-2.5 rounded-lg transition-all disabled:opacity-60 bg-red-500/80 hover:bg-red-500 text-white"
+              >
+                {deletingId ? 'Bitte warten...' : 'Löschen'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -7,7 +7,13 @@ import { X } from 'lucide-react';
 interface AddSubjectDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onAdd: (name: string, type: 'HAUPTFACH' | 'NEBENFACH', color: string) => Promise<void>;
+  onAdd: (
+    name: string,
+    type: 'HAUPTFACH' | 'NEBENFACH',
+    color: string,
+    defaultRoom?: string,
+    defaultTeacher?: string
+  ) => Promise<void>;
 }
 
 const COLOR_PRESETS = [
@@ -15,12 +21,15 @@ const COLOR_PRESETS = [
   '#f87171', '#fb923c', '#facc15', '#4ade80', '#2dd4bf', '#60a5fa',
   '#fca5a5', '#fbbd23', '#fde047', '#86efac', '#67e8f9', '#93c5fd',
   '#6366f1', '#8b5cf6', '#ec4899', '#818cf8', '#a78bfa', '#f472b6',
+  '#000000', '#1f2937', '#4b5563', '#9ca3af', '#d1d5db', '#ffffff',
 ];
 
 export default function AddSubjectDialog({ isOpen, onClose, onAdd }: AddSubjectDialogProps) {
   const [name, setName] = useState('');
   const [type, setType] = useState<'HAUPTFACH' | 'NEBENFACH'>('HAUPTFACH');
   const [color, setColor] = useState('#3b82f6');
+  const [defaultRoom, setDefaultRoom] = useState('');
+  const [defaultTeacher, setDefaultTeacher] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [isMounted, setIsMounted] = useState(false);
@@ -34,6 +43,8 @@ export default function AddSubjectDialog({ isOpen, onClose, onAdd }: AddSubjectD
     setName('');
     setType('HAUPTFACH');
     setColor('#3b82f6');
+    setDefaultRoom('');
+    setDefaultTeacher('');
     setError('');
   }, []);
 
@@ -59,7 +70,7 @@ export default function AddSubjectDialog({ isOpen, onClose, onAdd }: AddSubjectD
       setError('');
 
       try {
-        await onAdd(name.trim(), type, color);
+        await onAdd(name.trim(), type, color, defaultRoom, defaultTeacher);
         handleClose(true);
       } catch (err) {
         setError(
@@ -69,7 +80,7 @@ export default function AddSubjectDialog({ isOpen, onClose, onAdd }: AddSubjectD
         setIsLoading(false);
       }
     },
-    [name, type, color, onAdd, handleClose]
+    [name, type, color, defaultRoom, defaultTeacher, onAdd, handleClose]
   );
 
   if (!isOpen || !isMounted) return null;
@@ -137,6 +148,34 @@ export default function AddSubjectDialog({ isOpen, onClose, onAdd }: AddSubjectD
 
           {/* Color Selection */}
           <div className="space-y-2 animate-in fade-in slide-in-from-left-4 duration-300 delay-200">
+            <label className="block text-sm font-medium text-gray-300">
+              Standard-Raum
+            </label>
+            <input
+              type="text"
+              value={defaultRoom}
+              onChange={(e) => setDefaultRoom(e.target.value)}
+              placeholder="z.B. B204"
+              disabled={isLoading}
+              className="w-full text-base bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/25 transition-all"
+            />
+          </div>
+
+          <div className="space-y-2 animate-in fade-in slide-in-from-left-4 duration-300 delay-200">
+            <label className="block text-sm font-medium text-gray-300">
+              Standard-Lehrkraft
+            </label>
+            <input
+              type="text"
+              value={defaultTeacher}
+              onChange={(e) => setDefaultTeacher(e.target.value)}
+              placeholder="z.B. Frau Müller"
+              disabled={isLoading}
+              className="w-full text-base bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/25 transition-all"
+            />
+          </div>
+
+          <div className="space-y-2 animate-in fade-in slide-in-from-left-4 duration-300 delay-300">
             <label className="block text-sm font-medium text-gray-300">
               Farbe
             </label>

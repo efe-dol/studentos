@@ -12,6 +12,8 @@ interface EditState {
   name: string;
   type: 'HAUPTFACH' | 'NEBENFACH';
   color: string;
+  default_room: string;
+  default_teacher: string;
 }
 
 const COLOR_PRESETS = [
@@ -19,11 +21,19 @@ const COLOR_PRESETS = [
   '#f87171', '#fb923c', '#facc15', '#4ade80', '#2dd4bf', '#60a5fa',
   '#fca5a5', '#fbbd23', '#fde047', '#86efac', '#67e8f9', '#93c5fd',
   '#6366f1', '#8b5cf6', '#ec4899', '#818cf8', '#a78bfa', '#f472b6',
+  '#000000', '#1f2937', '#4b5563', '#9ca3af', '#d1d5db', '#ffffff',
 ];
 
 export default function SubjectListSettings() {
   const [showAddDialog, setShowAddDialog] = useState(false);
-  const [editState, setEditState] = useState<EditState>({ isOpen: false, name: '', type: 'HAUPTFACH', color: '#3b82f6' });
+  const [editState, setEditState] = useState<EditState>({
+    isOpen: false,
+    name: '',
+    type: 'HAUPTFACH',
+    color: '#3b82f6',
+    default_room: '',
+    default_teacher: '',
+  });
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [isMounted, setIsMounted] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -57,6 +67,8 @@ export default function SubjectListSettings() {
       name: subject.name,
       type: subject.type,
       color: subject.color,
+      default_room: subject.default_room || '',
+      default_teacher: subject.default_teacher || '',
     });
   };
 
@@ -69,8 +81,17 @@ export default function SubjectListSettings() {
         name: editState.name,
         type: editState.type,
         color: editState.color,
+        default_room: editState.default_room,
+        default_teacher: editState.default_teacher,
       });
-      setEditState({ isOpen: false, name: '', type: 'HAUPTFACH', color: '#3b82f6' });
+      setEditState({
+        isOpen: false,
+        name: '',
+        type: 'HAUPTFACH',
+        color: '#3b82f6',
+        default_room: '',
+        default_teacher: '',
+      });
     } finally {
       setIsSaving(false);
     }
@@ -169,7 +190,7 @@ export default function SubjectListSettings() {
                           {subject.name}
                         </span>
                       </div>
-                      <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex gap-2 opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 transition-opacity">
                         <button
                           onClick={() => handleEditSubject(subject)}
                           className="p-2 hover:bg-blue-500/20 rounded text-blue-300 transition-all hover:scale-110 hover:-translate-y-0.5 duration-200"
@@ -215,7 +236,7 @@ export default function SubjectListSettings() {
                           {subject.name}
                         </span>
                       </div>
-                      <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex gap-2 opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 transition-opacity">
                         <button
                           onClick={() => handleEditSubject(subject)}
                           className="p-2 hover:bg-blue-500/20 rounded text-blue-300 transition-all hover:scale-110 hover:-translate-y-0.5 duration-200"
@@ -244,9 +265,8 @@ export default function SubjectListSettings() {
       <AddSubjectDialog
         isOpen={showAddDialog}
         onClose={() => setShowAddDialog(false)}
-        onAdd={async (name, type, color) => {
-          await addSubject(name, type, color);
-          await fetchSubjects();
+        onAdd={async (name, type, color, defaultRoom, defaultTeacher) => {
+          await addSubject(name, type, color, defaultRoom, defaultTeacher);
         }}
       />
 
@@ -297,6 +317,34 @@ export default function SubjectListSettings() {
 
               <div className="modal-field-4">
                 <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Standard-Raum
+                </label>
+                <input
+                  type="text"
+                  value={editState.default_room}
+                  onChange={(e) => setEditState({ ...editState, default_room: e.target.value })}
+                  className="w-full text-base bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/25 transition-all"
+                  disabled={isSaving}
+                  placeholder="z.B. B204"
+                />
+              </div>
+
+              <div className="modal-field-5">
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Standard-Lehrkraft
+                </label>
+                <input
+                  type="text"
+                  value={editState.default_teacher}
+                  onChange={(e) => setEditState({ ...editState, default_teacher: e.target.value })}
+                  className="w-full text-base bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/25 transition-all"
+                  disabled={isSaving}
+                  placeholder="z.B. Frau Müller"
+                />
+              </div>
+
+              <div className="modal-field-6">
+                <label className="block text-sm font-medium text-gray-300 mb-2">
                   Farbe
                 </label>
                 <div className="grid grid-cols-6 gap-2">
@@ -322,7 +370,16 @@ export default function SubjectListSettings() {
 
             <div className="flex gap-3 flex-col sm:flex-row modal-buttons-animate">
               <button
-                onClick={() => setEditState({ isOpen: false, name: '', type: 'HAUPTFACH', color: '#3b82f6' })}
+                onClick={() =>
+                  setEditState({
+                    isOpen: false,
+                    name: '',
+                    type: 'HAUPTFACH',
+                    color: '#3b82f6',
+                    default_room: '',
+                    default_teacher: '',
+                  })
+                }
                 className="flex-1 px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-gray-300 font-medium text-base transition-all transform hover:scale-[1.02] active:scale-[0.98] duration-200"
                 disabled={isSaving}
               >
@@ -342,35 +399,30 @@ export default function SubjectListSettings() {
 
       {/* Delete Confirmation */}
       {deleteConfirmId && isMounted && createPortal(
-        <div
-          className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-sm p-4 grid place-items-center overflow-y-auto modal-backdrop-animate"
-          onClick={() => !isDeleting && setDeleteConfirmId(null)}
-        >
-          <div
-            className="w-full max-w-sm rounded-2xl shadow-2xl p-8 border border-white/10 bg-[#141414] modal-animate my-6"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h2 className="text-xl sm:text-2xl font-bold text-white mb-3 modal-field-1">
-              Fach löschen?
-            </h2>
-            <p className="text-sm sm:text-base text-gray-400 mb-6 modal-field-2">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[80] modal-backdrop-animate">
+          <div className="bg-gradient-to-b from-[#1a1a1a] to-[#0f0f0f] border border-white/10 rounded-2xl p-6 max-w-md w-full mx-4 modal-animate">
+            <h2 className="text-xl font-semibold mb-3">Fach löschen?</h2>
+            <p className="text-gray-300 leading-relaxed">
               Dadurch werden auch alle zugehörigen Noten gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.
             </p>
 
-            <div className="flex gap-3 flex-col sm:flex-row modal-buttons-animate">
+            <div className="flex gap-3 mt-6">
               <button
-                onClick={() => setDeleteConfirmId(null)}
-                className="flex-1 px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-gray-300 font-medium text-base transition-all transform hover:scale-[1.02] active:scale-[0.98] duration-200"
+                onClick={() => {
+                  if (isDeleting) return;
+                  setDeleteConfirmId(null);
+                }}
                 disabled={isDeleting}
+                className="flex-1 py-2.5 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 transition-all disabled:opacity-60"
               >
                 Abbrechen
               </button>
               <button
                 onClick={() => deleteConfirmId && handleDeleteSubject(deleteConfirmId)}
-                className="flex-1 px-4 py-3 bg-red-500 hover:bg-red-600 rounded-lg text-white font-medium text-base transition-all disabled:opacity-50 transform hover:scale-[1.02] active:scale-[0.98] duration-200"
+                className="flex-1 py-2.5 rounded-lg transition-all disabled:opacity-60 bg-red-500/80 hover:bg-red-500 text-white"
                 disabled={isDeleting}
               >
-                {isDeleting ? 'Löschen...' : 'Löschen'}
+                {isDeleting ? 'Bitte warten...' : 'Löschen'}
               </button>
             </div>
           </div>

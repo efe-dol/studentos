@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { getOrCreateActiveSchoolYearId } from '@/lib/school-years/server';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(request: NextRequest) {
@@ -10,13 +11,16 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const activeSchoolYearId = await getOrCreateActiveSchoolYearId(supabase, user.id);
+
     const { searchParams } = new URL(request.url);
     const subjectId = searchParams.get('subjectId');
 
     let query = supabase
       .from('grades')
       .select('*')
-      .eq('user_id', user.id);
+      .eq('user_id', user.id)
+      .eq('school_year_id', activeSchoolYearId);
 
     if (subjectId) {
       query = query.eq('subject_id', subjectId);
@@ -45,6 +49,8 @@ export async function POST(request: NextRequest) {
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const activeSchoolYearId = await getOrCreateActiveSchoolYearId(supabase, user.id);
 
     const { subjectId, grade, gradeType, weight = 1.0, description, gradeDate } = await request.json();
 
@@ -83,6 +89,7 @@ export async function POST(request: NextRequest) {
       .from('subjects')
       .select('user_id')
       .eq('id', subjectId)
+      .eq('school_year_id', activeSchoolYearId)
       .single();
 
     if (!subject || subject.user_id !== user.id) {
@@ -94,6 +101,7 @@ export async function POST(request: NextRequest) {
       .insert({
         subject_id: subjectId,
         user_id: user.id,
+        school_year_id: activeSchoolYearId,
         grade: parsedGrade,
         grade_type: gradeType,
         weight: parsedWeight,

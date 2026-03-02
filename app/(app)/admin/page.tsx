@@ -370,7 +370,7 @@ export default function AdminPage() {
   const inactiveMessages = messages.filter(m => !m.is_active);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#0a0a0a] via-[#121212] to-[#1a1a1a] text-white">
+    <div className="h-[100dvh] overflow-y-auto overflow-x-hidden bg-gradient-to-b from-[#0a0a0a] via-[#121212] to-[#1a1a1a] text-white">
       <AuthBackground />
 
       <div className="relative z-10 max-w-5xl mx-auto px-6 py-8">

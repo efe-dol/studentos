@@ -37,7 +37,11 @@ export default function TodosPage() {
   const supabase = createClient();
   const router = useRouter();
 
-  const fetchTodos = async () => {
+  const isAbortError = (error: unknown) => {
+    return error instanceof DOMException && error.name === 'AbortError';
+  };
+
+  const fetchTodos = async (signal?: AbortSignal) => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
@@ -45,7 +49,7 @@ export default function TodosPage() {
         return;
       }
 
-      const response = await fetch('/api/todos');
+      const response = await fetch('/api/todos', { signal });
       if (!response.ok) {
         throw new Error('Failed to fetch todos');
       }
@@ -54,6 +58,7 @@ export default function TodosPage() {
       setTodos(data.todos || []);
       setLoading(false);
     } catch (error) {
+      if (isAbortError(error)) return;
       console.error('Error fetching todos:', error);
       setToast({ message: 'Fehler beim Laden der ToDos', type: 'error' });
       setLoading(false);
@@ -61,7 +66,9 @@ export default function TodosPage() {
   };
 
   useEffect(() => {
-    fetchTodos();
+    const controller = new AbortController();
+    fetchTodos(controller.signal);
+    return () => controller.abort();
   }, []);
 
   const resetForm = () => {
@@ -251,7 +258,7 @@ export default function TodosPage() {
   const completedTodos = todos.filter(t => t.is_completed);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#0a0a0a] via-[#121212] to-[#1a1a1a] text-white">
+    <div className="h-[100dvh] overflow-y-auto overflow-x-hidden bg-gradient-to-b from-[#0a0a0a] via-[#121212] to-[#1a1a1a] text-white">
       <AuthBackground />
 
       <div className="relative z-10 max-w-5xl mx-auto px-6 py-8">
