@@ -82,6 +82,14 @@ type ScheduleEntry = {
   subjects?: SubjectRelation;
 };
 
+type SchedulePreset = {
+  id: string;
+  label: string;
+  start: string;
+  end: string;
+  defaultType?: 'break';
+};
+
 type GradeEntry = {
   id: string;
   grade: number;
@@ -115,6 +123,26 @@ const WEEKDAY_ORDER: ScheduleEntry['weekday'][] = [
 ];
 
 const SCHEDULE_BREAK_OPTION = '__break__';
+const SCHEDULE_FREE_OPTION = '__free__';
+const SCHEDULE_BREAK_KIND_PAUSE = '__break_pause__';
+const SCHEDULE_BREAK_KIND_FREE = '__break_free__';
+const DEFAULT_SCHEDULE_PRESET_ID = 'lesson-1';
+const SCHEDULE_PRESETS: SchedulePreset[] = [
+  { id: 'lesson-1', label: 'Stunde 1', start: '07:35', end: '08:20' },
+  { id: 'lesson-2', label: 'Stunde 2', start: '08:20', end: '09:05' },
+  { id: 'break-1', label: 'Pause', start: '09:05', end: '09:25', defaultType: 'break' },
+  { id: 'lesson-3', label: 'Stunde 3', start: '09:25', end: '10:10' },
+  { id: 'lesson-4', label: 'Stunde 4', start: '10:10', end: '10:55' },
+  { id: 'break-2', label: 'Pause', start: '10:55', end: '11:15', defaultType: 'break' },
+  { id: 'lesson-5', label: 'Stunde 5', start: '11:15', end: '12:00' },
+  { id: 'lesson-6', label: 'Stunde 6', start: '12:00', end: '12:45' },
+  { id: 'break-3', label: 'Mittagspause/Pause', start: '12:45', end: '13:30', defaultType: 'break' },
+  { id: 'lesson-8', label: 'Stunde 8', start: '13:30', end: '14:15' },
+  { id: 'lesson-9', label: 'Stunde 9', start: '14:15', end: '15:00' },
+  { id: 'break-4', label: 'Pause', start: '15:00', end: '15:05', defaultType: 'break' },
+  { id: 'lesson-10', label: 'Stunde 10', start: '15:05', end: '15:50' },
+  { id: 'lesson-11', label: 'Stunde 11', start: '15:50', end: '16:35' },
+];
 const DASHBOARD_VERSION = 'v0.2.1';
 
 export default function Dashboard() {
@@ -147,8 +175,10 @@ export default function Dashboard() {
   const [savingHomework, setSavingHomework] = useState(false);
   const [deletingHomeworkId, setDeletingHomeworkId] = useState<string | null>(null);
   const [scheduleWeekday, setScheduleWeekday] = useState<ScheduleEntry['weekday']>('monday');
+  const [schedulePresetId, setSchedulePresetId] = useState(DEFAULT_SCHEDULE_PRESET_ID);
   const [scheduleStartTime, setScheduleStartTime] = useState('');
   const [scheduleEndTime, setScheduleEndTime] = useState('');
+  const [scheduleDurationOverride, setScheduleDurationOverride] = useState(false);
   const [scheduleSubjectId, setScheduleSubjectId] = useState('');
   const [scheduleRoom, setScheduleRoom] = useState('');
   const [scheduleTeacher, setScheduleTeacher] = useState('');
@@ -314,8 +344,10 @@ export default function Dashboard() {
 
   const resetScheduleForm = () => {
     setScheduleWeekday('monday');
-    setScheduleStartTime('');
-    setScheduleEndTime('');
+    setSchedulePresetId(DEFAULT_SCHEDULE_PRESET_ID);
+    setScheduleStartTime('07:35');
+    setScheduleEndTime('08:20');
+    setScheduleDurationOverride(false);
     setScheduleRoom('');
     setScheduleTeacher('');
     setScheduleRoomTeacherOverride(false);
@@ -327,7 +359,8 @@ export default function Dashboard() {
       return;
     }
 
-    const isBreak = scheduleSubjectId === SCHEDULE_BREAK_OPTION;
+    const isBreak = scheduleSubjectId === SCHEDULE_BREAK_OPTION || scheduleSubjectId === SCHEDULE_FREE_OPTION;
+    const breakKind = scheduleSubjectId === SCHEDULE_FREE_OPTION ? SCHEDULE_BREAK_KIND_FREE : SCHEDULE_BREAK_KIND_PAUSE;
 
     if (!scheduleWeekday || !scheduleStartTime || !scheduleEndTime || (!scheduleSubjectId && !isBreak)) {
       setToast({ message: 'Bitte Wochentag, Zeitraum und Fach auswählen', type: 'error' });
@@ -350,7 +383,11 @@ export default function Dashboard() {
           end_time: scheduleEndTime,
           is_break: isBreak,
           subject_id: isBreak ? null : scheduleSubjectId,
-          room: !isBreak && scheduleRoomTeacherOverride ? scheduleRoom : null,
+          room: isBreak
+            ? breakKind
+            : !isBreak && scheduleRoomTeacherOverride
+            ? scheduleRoom
+            : null,
           teacher: !isBreak && scheduleRoomTeacherOverride ? scheduleTeacher : null,
         }),
       });
@@ -1091,7 +1128,12 @@ export default function Dashboard() {
     () => homeworkSubjects.find((subject) => subject.id === scheduleSubjectId),
     [homeworkSubjects, scheduleSubjectId]
   );
-  const isBreakSelected = scheduleSubjectId === SCHEDULE_BREAK_OPTION;
+  const selectedSchedulePreset = useMemo(
+    () => SCHEDULE_PRESETS.find((preset) => preset.id === schedulePresetId),
+    [schedulePresetId]
+  );
+  const isBreakSelected = scheduleSubjectId === SCHEDULE_BREAK_OPTION || scheduleSubjectId === SCHEDULE_FREE_OPTION;
+  const isFreePeriodSelected = scheduleSubjectId === SCHEDULE_FREE_OPTION;
 
   useEffect(() => {
     if (isBreakSelected) {
@@ -1100,6 +1142,19 @@ export default function Dashboard() {
       setScheduleTeacher('');
     }
   }, [isBreakSelected]);
+
+  useEffect(() => {
+    if (!selectedSchedulePreset || scheduleDurationOverride) {
+      return;
+    }
+
+    setScheduleStartTime(selectedSchedulePreset.start);
+    setScheduleEndTime(selectedSchedulePreset.end);
+
+    if (selectedSchedulePreset.defaultType === 'break') {
+      setScheduleSubjectId(SCHEDULE_BREAK_OPTION);
+    }
+  }, [selectedSchedulePreset, scheduleDurationOverride]);
 
   if (loading) {
     return <LoadingScreen />;
@@ -1404,6 +1459,42 @@ export default function Dashboard() {
                   </div>
 
                   <div className="modal-field-2">
+                    <label className="block text-sm font-medium mb-2 text-gray-300">Klassische Stundendauer</label>
+                    <select
+                      value={schedulePresetId}
+                      onChange={(event) => setSchedulePresetId(event.target.value)}
+                      className="w-full p-3 rounded-xl bg-white/5 border border-white/10 focus:border-cyan-500 focus:outline-none text-sm mb-3"
+                      style={{ colorScheme: 'dark' }}
+                    >
+                      {SCHEDULE_PRESETS.map((preset) => (
+                        <option key={preset.id} value={preset.id} className="bg-black text-white">
+                          {preset.label}: {preset.start} - {preset.end}
+                        </option>
+                      ))}
+                    </select>
+
+                    <div className="rounded-xl border border-white/10 bg-white/5 p-3 mb-3">
+                      <label className="flex items-center justify-between gap-3 text-sm text-gray-200">
+                        <span>Stundendauer abweichend</span>
+                        <input
+                          type="checkbox"
+                          checked={scheduleDurationOverride}
+                          onChange={(event) => {
+                            const checked = event.target.checked;
+                            setScheduleDurationOverride(checked);
+                            if (!checked && selectedSchedulePreset) {
+                              setScheduleStartTime(selectedSchedulePreset.start);
+                              setScheduleEndTime(selectedSchedulePreset.end);
+                            }
+                          }}
+                          className="h-4 w-4 rounded border-white/20 bg-black/40"
+                        />
+                      </label>
+                      <p className="text-xs text-gray-400 mt-1">
+                        Ohne Abweichung werden die klassischen Zeiten automatisch übernommen.
+                      </p>
+                    </div>
+
                     <p className="text-xs text-gray-400 mb-2">Zeitraum (von/bis)</p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <input
@@ -1411,14 +1502,16 @@ export default function Dashboard() {
                         value={scheduleStartTime}
                         onChange={(event) => setScheduleStartTime(event.target.value)}
                         aria-label="Startzeit"
-                        className="w-full p-3 rounded-xl bg-white/5 border border-white/10 focus:border-cyan-500 focus:outline-none text-sm"
+                        disabled={!scheduleDurationOverride}
+                        className="w-full p-3 rounded-xl bg-white/5 border border-white/10 focus:border-cyan-500 focus:outline-none text-sm disabled:opacity-60 disabled:cursor-not-allowed"
                       />
                       <input
                         type="time"
                         value={scheduleEndTime}
                         onChange={(event) => setScheduleEndTime(event.target.value)}
                         aria-label="Endzeit"
-                        className="w-full p-3 rounded-xl bg-white/5 border border-white/10 focus:border-cyan-500 focus:outline-none text-sm"
+                        disabled={!scheduleDurationOverride}
+                        className="w-full p-3 rounded-xl bg-white/5 border border-white/10 focus:border-cyan-500 focus:outline-none text-sm disabled:opacity-60 disabled:cursor-not-allowed"
                       />
                     </div>
                   </div>
@@ -1433,6 +1526,7 @@ export default function Dashboard() {
                     >
                       <option value="" className="bg-black text-white">Fach wählen</option>
                       <option value={SCHEDULE_BREAK_OPTION} className="bg-black text-white">Pause</option>
+                      <option value={SCHEDULE_FREE_OPTION} className="bg-black text-white">Freistunde</option>
                       {homeworkSubjects.map((subject) => (
                         <option key={subject.id} value={subject.id} className="bg-black text-white">
                           {subject.name}
@@ -1442,7 +1536,13 @@ export default function Dashboard() {
                     {scheduleSubjectId && (
                       <div className="mt-2 flex items-center gap-2 text-xs text-gray-300">
                         {isBreakSelected ? (
-                          <span className="w-2.5 h-2.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-cyan-400"></span>
+                          <span
+                            className={`w-2.5 h-2.5 rounded-full ${
+                              isFreePeriodSelected
+                                ? 'bg-gradient-to-r from-fuchsia-400/70 to-indigo-300/70'
+                                : 'bg-gradient-to-r from-fuchsia-500 to-cyan-400'
+                            }`}
+                          ></span>
                         ) : (
                           <span
                             className="w-2.5 h-2.5 rounded-full"
@@ -1452,9 +1552,24 @@ export default function Dashboard() {
                           ></span>
                         )}
                         <span>
-                          {isBreakSelected ? 'Pause (Gradient)' : `Farbe: ${selectedScheduleSubject?.name || 'Fach'}`}
+                          {isBreakSelected
+                            ? isFreePeriodSelected
+                              ? 'Freistunde (dezenter Gradient)'
+                              : 'Pause (Gradient)'
+                            : `Farbe: ${selectedScheduleSubject?.name || 'Fach'}`}
                         </span>
                       </div>
+                    )}
+
+                    {!isBreakSelected && selectedScheduleSubject && (
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('subjects')}
+                        className="mt-2 inline-flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg bg-white/5 border border-white/15 hover:bg-white/10 transition-all text-gray-200"
+                      >
+                        <Edit className="w-3.5 h-3.5" />
+                        Gewähltes Fach bearbeiten
+                      </button>
                     )}
                   </div>
 
@@ -1605,6 +1720,7 @@ export default function Dashboard() {
                             {day.entries.map((entry, entryIndex) => {
                               const relatedSubject = getRelatedSubject(entry.subjects);
                               const isBreakEntry = Boolean(entry.is_break);
+                              const isFreePeriodEntry = isBreakEntry && entry.room === SCHEDULE_BREAK_KIND_FREE;
                               const displayRoom = entry.room || relatedSubject?.default_room || '—';
                               const displayTeacher = entry.teacher || relatedSubject?.default_teacher || '—';
                               return (
@@ -1612,7 +1728,9 @@ export default function Dashboard() {
                                 key={entry.id}
                                 className={`p-3 rounded-lg border appointment-item-animate ${
                                   isBreakEntry
-                                    ? 'bg-gradient-to-r from-fuchsia-500/10 to-cyan-500/10 border-fuchsia-400/20'
+                                    ? isFreePeriodEntry
+                                      ? 'bg-gradient-to-r from-fuchsia-400/5 to-indigo-300/5 border-fuchsia-300/10'
+                                      : 'bg-gradient-to-r from-fuchsia-500/10 to-cyan-500/10 border-fuchsia-400/20'
                                     : 'bg-black/20 border-white/10'
                                 }`}
                                 style={{ animationDelay: `${Math.min(entryIndex * 40, 280)}ms` }}
@@ -1621,7 +1739,13 @@ export default function Dashboard() {
                                   <div className="min-w-0">
                                     <div className="flex items-center gap-2 mb-1">
                                       {isBreakEntry ? (
-                                        <span className="w-2.5 h-2.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-cyan-400"></span>
+                                        <span
+                                          className={`w-2.5 h-2.5 rounded-full ${
+                                            isFreePeriodEntry
+                                              ? 'bg-gradient-to-r from-fuchsia-400/70 to-indigo-300/70'
+                                              : 'bg-gradient-to-r from-fuchsia-500 to-cyan-400'
+                                          }`}
+                                        ></span>
                                       ) : (
                                         <span
                                           className="w-2.5 h-2.5 rounded-full"
@@ -1631,11 +1755,13 @@ export default function Dashboard() {
                                       <p
                                         className={`text-sm font-medium ${
                                           isBreakEntry
-                                            ? 'bg-gradient-to-r from-fuchsia-300 to-cyan-300 bg-clip-text text-transparent'
+                                            ? isFreePeriodEntry
+                                              ? 'bg-gradient-to-r from-fuchsia-200 to-indigo-200 bg-clip-text text-transparent'
+                                              : 'bg-gradient-to-r from-fuchsia-300 to-cyan-300 bg-clip-text text-transparent'
                                             : ''
                                         }`}
                                       >
-                                        {isBreakEntry ? 'Pause' : relatedSubject?.name || 'Fach'}
+                                        {isBreakEntry ? (isFreePeriodEntry ? 'Freistunde' : 'Pause') : relatedSubject?.name || 'Fach'}
                                       </p>
                                     </div>
                                     <p className="text-xs text-gray-300">

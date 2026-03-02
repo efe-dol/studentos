@@ -86,8 +86,8 @@ export default function AddSubjectDialog({ isOpen, onClose, onAdd }: AddSubjectD
   if (!isOpen || !isMounted) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-sm p-4 grid place-items-center overflow-y-auto modal-backdrop-animate">
-      <div className="w-full max-w-md rounded-2xl shadow-2xl p-8 border border-white/10 bg-[#141414] max-h-[90vh] overflow-y-auto modal-animate my-6">
+    <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-sm p-4 grid place-items-center overflow-hidden modal-backdrop-animate">
+      <div className="w-full max-w-md rounded-2xl shadow-2xl p-8 border border-white/10 bg-[#141414] max-h-[90dvh] overflow-y-auto overscroll-contain touch-pan-y modal-animate">
         {/* Header */}
         <div className="flex items-center justify-between mb-6 animate-in fade-in slide-in-from-top-4 duration-300">
           <h2 className="text-xl sm:text-2xl font-bold text-white">

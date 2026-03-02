@@ -143,7 +143,7 @@ export async function POST(request: NextRequest) {
           weekday: entry.weekday,
           start_time: entry.start_time,
           end_time: entry.end_time,
-          room: isBreak ? null : entry.room?.trim() || null,
+          room: entry.room?.trim() || null,
           teacher: isBreak ? null : entry.teacher?.trim() || null,
         };
       })
