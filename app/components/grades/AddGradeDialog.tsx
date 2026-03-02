@@ -25,10 +25,10 @@ export type AddGradeData = {
 type GradeType = AddGradeData['gradeType'];
 
 const GRADE_TYPES: Array<{ id: GradeType; label: string; category: 'GL' | 'KL'; hint: string }> = [
-  { id: 'SCHULAUFGABE', label: 'Schulaufgabe (GL)', category: 'GL', hint: 'Große Leistungsnachweis - zählt 2x' },
-  { id: 'MÜNDLICH', label: 'Mündlich', category: 'KL', hint: 'Kleine Leistungsnachweis' },
-  { id: 'KURZARBEIT', label: 'Kurzarbeit', category: 'KL', hint: 'Kleine Leistungsnachweis' },
-  { id: 'KSL', label: 'schriftliche Leistungskontrolle', category: 'KL', hint: 'Kleine Leistungsnachweis' },
+  { id: 'SCHULAUFGABE', label: 'Schulaufgabe (GL)', category: 'GL', hint: 'Großer Leistungsnachweis – zählt 2x' },
+  { id: 'MÜNDLICH', label: 'Mündlich', category: 'KL', hint: 'Kleiner Leistungsnachweis' },
+  { id: 'KURZARBEIT', label: 'Kurzarbeit', category: 'KL', hint: 'Kleiner Leistungsnachweis' },
+  { id: 'KSL', label: 'Stegreifaufgabe', category: 'KL', hint: 'Kleiner Leistungsnachweis' },
 ];
 
 export default function AddGradeDialog({

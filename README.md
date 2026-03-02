@@ -44,6 +44,20 @@ Authorization: Bearer <CRON_SECRET>
 
 4. Auf iPad: App zum Home-Bildschirm hinzufügen und im Termine-Tab `Push aktivieren` drücken.
 
+## Versionslog
+
+### v0.2.2 (2026-03-02)
+
+- Stundenplan mit Tages-Tabs (Montag–Freitag) und automatischer Auswahl des aktuellen Wochentags beim Öffnen.
+- Tages-Tab und Stundenplan-Formular im Bearbeitungsmodus synchronisiert.
+- Notenbezeichnung angepasst: `Schriftliche Leistungskontrolle` → `Stegreifaufgabe`.
+- Grammatik in Noten-Texten vereinheitlicht (z. B. `Kleiner/Großer Leistungsnachweis`).
+- Dashboard-Notendurchschnitt auf dieselbe Berechnungslogik wie im Tab `Fächer` umgestellt.
+
+### Nächste Version
+
+- Fix für Push-Benachrichtigungen ist für die nächste Version geplant.
+
 ## Copyright
 
 © Efe Dolaman. Alle Rechte vorbehalten.

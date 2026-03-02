@@ -1,6 +1,6 @@
 /**
  * Berechnet den Durchschnitt der Noten basierend auf dem System:
- * KL (Kleine Leistungsnachweise): Mündlich, Kurzarbeit, KSL
+ * KL (Kleine Leistungsnachweise): Mündlich, Kurzarbeit, Stegreifaufgabe
  * GL (Große Leistungsnachweise): Schulaufgabe (2x zählen)
  * 
  * Fach-Durchschnitt = (KL-Durchschnitt + GL-Durchschnitt) / 2

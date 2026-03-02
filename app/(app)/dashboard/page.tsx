@@ -6,6 +6,7 @@ import AuthBackground from '@/app/components/common/AuthBackground';
 import LoadingScreen from '@/app/components/common/LoadingScreen';
 import Toast from '@/app/components/common/Toast';
 import GradesTab from '@/app/components/grades/GradesTab';
+import { calculateOverallAverage, getGradeLabel } from '@/lib/grades/calculator';
 import { Settings, CheckSquare, BookOpen, BarChart3, Calendar, Zap, Edit, UtensilsCrossed, ListTodo, Shield, AlertTriangle, X, Clock, Plus, Trash2, Bell, BellOff, Share2, Download, Heart, Info } from 'lucide-react';
 
 type User = {
@@ -92,6 +93,7 @@ type SchedulePreset = {
 
 type GradeEntry = {
   id: string;
+  subject_id: string;
   grade: number;
   grade_type: 'SCHULAUFGABE' | 'MÜNDLICH' | 'KURZARBEIT' | 'KSL';
   weight: number;
@@ -122,6 +124,14 @@ const WEEKDAY_ORDER: ScheduleEntry['weekday'][] = [
   'friday',
 ];
 
+const getCurrentSchoolWeekday = (): ScheduleEntry['weekday'] => {
+  const currentDay = new Date().getDay();
+  if (currentDay >= 1 && currentDay <= 5) {
+    return WEEKDAY_ORDER[currentDay - 1];
+  }
+  return 'monday';
+};
+
 const SCHEDULE_BREAK_OPTION = '__break__';
 const SCHEDULE_FREE_OPTION = '__free__';
 const SCHEDULE_BREAK_KIND_PAUSE = '__break_pause__';
@@ -143,7 +153,7 @@ const SCHEDULE_PRESETS: SchedulePreset[] = [
   { id: 'lesson-10', label: 'Stunde 10', start: '15:05', end: '15:50' },
   { id: 'lesson-11', label: 'Stunde 11', start: '15:50', end: '16:35' },
 ];
-const DASHBOARD_VERSION = 'v0.2.1';
+const DASHBOARD_VERSION = 'v0.2.2';
 
 export default function Dashboard() {
   const FIXED_SCHOOL_NAME = 'Gymnasium Weilheim i.OB';
@@ -175,6 +185,7 @@ export default function Dashboard() {
   const [savingHomework, setSavingHomework] = useState(false);
   const [deletingHomeworkId, setDeletingHomeworkId] = useState<string | null>(null);
   const [scheduleWeekday, setScheduleWeekday] = useState<ScheduleEntry['weekday']>('monday');
+  const [scheduleViewWeekday, setScheduleViewWeekday] = useState<ScheduleEntry['weekday']>('monday');
   const [schedulePresetId, setSchedulePresetId] = useState(DEFAULT_SCHEDULE_PRESET_ID);
   const [scheduleStartTime, setScheduleStartTime] = useState('');
   const [scheduleEndTime, setScheduleEndTime] = useState('');
@@ -939,6 +950,10 @@ export default function Dashboard() {
   useEffect(() => {
     const controller = new AbortController();
 
+    if (activeTab === 'dashboard') {
+      fetchHomeworkSubjects(false, controller.signal);
+    }
+
     if (activeTab === 'appointments') {
       fetchAppointments(100, controller.signal);
     }
@@ -951,6 +966,9 @@ export default function Dashboard() {
     if (activeTab === 'schedule') {
       fetchScheduleEntries(controller.signal);
       fetchHomeworkSubjects(false, controller.signal);
+      const currentWeekday = getCurrentSchoolWeekday();
+      setScheduleViewWeekday(currentWeekday);
+      setScheduleWeekday(currentWeekday);
     }
 
     return () => controller.abort();
@@ -971,6 +989,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (scheduleEditMode) {
+      setScheduleWeekday(scheduleViewWeekday);
       setShowScheduleForm(true);
 
       const frame = requestAnimationFrame(() => {
@@ -987,7 +1006,7 @@ export default function Dashboard() {
     }, 320);
 
     return () => clearTimeout(timeout);
-  }, [scheduleEditMode]);
+  }, [scheduleEditMode, scheduleViewWeekday]);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -1037,20 +1056,18 @@ export default function Dashboard() {
   const gradeCount = grades.length;
   const weightedAverage = useMemo(
     () =>
-      gradeCount === 0
-        ? null
-        : grades.reduce((sum, grade) => sum + grade.grade * (grade.weight || 1), 0) /
-          grades.reduce((sum, grade) => sum + (grade.weight || 1), 0),
-    [gradeCount, grades]
+      calculateOverallAverage(
+        homeworkSubjects.map((subject) => ({
+          ...subject,
+          grades: grades.filter((grade) => grade.subject_id === subject.id),
+        }))
+      ),
+    [homeworkSubjects, grades]
   );
 
   const averageLabel = useMemo(() => {
     if (weightedAverage === null) return '—';
-    if (weightedAverage <= 2) return 'Sehr gut';
-    if (weightedAverage <= 3) return 'Gut';
-    if (weightedAverage <= 4) return 'Befriedigend';
-    if (weightedAverage <= 5) return 'Ausreichend';
-    return 'Verbesserbar';
+    return getGradeLabel(weightedAverage);
   }, [weightedAverage]);
 
   const gradeBucketCounts = useMemo(
@@ -1114,14 +1131,9 @@ export default function Dashboard() {
     [scheduleEntries]
   );
 
-  const groupedScheduleEntries = useMemo(
-    () =>
-      WEEKDAY_ORDER.map((weekday) => ({
-        weekday,
-        label: WEEKDAY_LABELS[weekday],
-        entries: orderedScheduleEntries.filter((entry) => entry.weekday === weekday),
-      })),
-    [orderedScheduleEntries]
+  const selectedScheduleDayEntries = useMemo(
+    () => orderedScheduleEntries.filter((entry) => entry.weekday === scheduleViewWeekday),
+    [orderedScheduleEntries, scheduleViewWeekday]
   );
 
   const selectedScheduleSubject = useMemo(
@@ -1704,20 +1716,40 @@ export default function Dashboard() {
                     Noch keine Stundenplan-Einträge vorhanden.
                   </div>
                 ) : (
-                  <div className="space-y-4 max-h-[62vh] overflow-y-auto pr-1">
-                    {groupedScheduleEntries.map((day, dayIndex) => (
-                      <div
-                        key={day.weekday}
-                        className="rounded-xl border border-white/10 bg-white/5 p-4 appointment-item-animate"
-                        style={{ animationDelay: `${Math.min(dayIndex * 60, 360)}ms` }}
-                      >
-                        <h3 className="text-sm font-semibold text-gray-200 mb-3">{day.label}</h3>
+                  <>
+                    <div className="mb-4 flex flex-wrap gap-2">
+                      {WEEKDAY_ORDER.map((weekday) => {
+                        const isActive = scheduleViewWeekday === weekday;
+                        return (
+                          <button
+                            key={weekday}
+                            onClick={() => {
+                              setScheduleViewWeekday(weekday);
+                              if (scheduleEditMode) {
+                                setScheduleWeekday(weekday);
+                              }
+                            }}
+                            className={`px-3 py-1.5 rounded-lg border text-xs transition-all ${
+                              isActive
+                                ? 'bg-cyan-500/20 border-cyan-400/40 text-cyan-200'
+                                : 'bg-white/5 border-white/15 text-gray-200 hover:bg-white/10'
+                            }`}
+                          >
+                            {WEEKDAY_LABELS[weekday]}
+                          </button>
+                        );
+                      })}
+                    </div>
 
-                        {day.entries.length === 0 ? (
+                    <div className="max-h-[62vh] overflow-y-auto pr-1">
+                      <div className="rounded-xl border border-white/10 bg-white/5 p-4 appointment-item-animate">
+                        <h3 className="text-sm font-semibold text-gray-200 mb-3">{WEEKDAY_LABELS[scheduleViewWeekday]}</h3>
+
+                        {selectedScheduleDayEntries.length === 0 ? (
                           <p className="text-xs text-gray-500">Keine Einträge</p>
                         ) : (
                           <div className="space-y-2">
-                            {day.entries.map((entry, entryIndex) => {
+                            {selectedScheduleDayEntries.map((entry, entryIndex) => {
                               const relatedSubject = getRelatedSubject(entry.subjects);
                               const isBreakEntry = Boolean(entry.is_break);
                               const isFreePeriodEntry = isBreakEntry && entry.room === SCHEDULE_BREAK_KIND_FREE;
@@ -1791,8 +1823,8 @@ export default function Dashboard() {
                           </div>
                         )}
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  </>
                 )}
               </div>
             </div>

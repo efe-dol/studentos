@@ -76,7 +76,7 @@ export default function SubjectDetail({
       'SCHULAUFGABE': 'Schulaufgabe',
       'MÜNDLICH': 'Mündlich',
       'KURZARBEIT': 'Kurzarbeit',
-      'KSL': 'schrift. Leistungskontrolle',
+      'KSL': 'Stegreifaufgabe',
     };
     return labels[type] || type;
   };
@@ -132,7 +132,7 @@ export default function SubjectDetail({
           <div className="text-2xl sm:text-3xl font-bold text-white">
             {klAverage !== null ? formatGrade(klAverage) : '-'}
           </div>
-          <div className="text-xs text-gray-500 mt-2">Kleine Leistungen</div>
+          <div className="text-xs text-gray-500 mt-2">Kleine Leistungsnachweise</div>
         </div>
 
         {/* GL Average */}
@@ -141,7 +141,7 @@ export default function SubjectDetail({
           <div className="text-2xl sm:text-3xl font-bold text-white">
             {glAverage !== null ? formatGrade(glAverage) : '-'}
           </div>
-          <div className="text-xs text-gray-500 mt-2">Große Leistungen (2x)</div>
+          <div className="text-xs text-gray-500 mt-2">Große Leistungsnachweise (2x)</div>
         </div>
       </div>
 
