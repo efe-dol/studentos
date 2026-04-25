@@ -153,7 +153,7 @@ const SCHEDULE_PRESETS: SchedulePreset[] = [
   { id: 'lesson-10', label: 'Stunde 10', start: '15:05', end: '15:50' },
   { id: 'lesson-11', label: 'Stunde 11', start: '15:50', end: '16:35' },
 ];
-const DASHBOARD_VERSION = 'v0.2.2';
+const DASHBOARD_VERSION = 'v0.2.4';
 
 export default function Dashboard() {
   const FIXED_SCHOOL_NAME = 'Gymnasium Weilheim i.OB';

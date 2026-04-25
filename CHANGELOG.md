@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog, and this project adheres to Semantic Versioning.
 
+## [0.2.4] - 2026-04-25
+
+### Changed
+- Updated app release version to `0.2.4`.
+- Updated the About version shown on Home/Dashboard to `v0.2.4`.
+
 ## [0.2.3] - 2026-04-25
 
 ### Changed
