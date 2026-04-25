@@ -1,9 +1,9 @@
 /**
  * Berechnet den Durchschnitt der Noten basierend auf dem System:
  * KL (Kleine Leistungsnachweise): Mündlich, Kurzarbeit, Stegreifaufgabe
- * GL (Große Leistungsnachweise): Schulaufgabe (2x zählen)
+ * GL (Große Leistungsnachweise): Schulaufgabe
  * 
- * Fach-Durchschnitt = (KL-Durchschnitt + GL-Durchschnitt) / 2
+ * Fach-Durchschnitt = (KL-Durchschnitt + 2 * GL-Durchschnitt) / 3
  */
 
 export interface Grade {
@@ -37,16 +37,14 @@ export function calculateKLAverage(grades: Grade[]): number | null {
 
 /**
  * Berechnet den Durchschnitt für große Leistungsnachweise (GL)
- * Schulaufgaben zählen 2x (doppeltes Gewicht)
  */
 export function calculateGLAverage(grades: Grade[]): number | null {
   const glGrades = grades.filter(g => g.grade_type === 'SCHULAUFGABE');
   
   if (glGrades.length === 0) return null;
 
-  // Schulaufgaben zählen 2x
-  const sum = glGrades.reduce((acc, grade) => acc + grade.grade * grade.weight * 2, 0);
-  const totalWeight = glGrades.reduce((acc, grade) => acc + grade.weight * 2, 0);
+  const sum = glGrades.reduce((acc, grade) => acc + grade.grade * grade.weight, 0);
+  const totalWeight = glGrades.reduce((acc, grade) => acc + grade.weight, 0);
 
   return sum / totalWeight;
 }
@@ -58,9 +56,9 @@ export function calculateSubjectAverage(grades: Grade[]): number | null {
   const klAvg = calculateKLAverage(grades);
   const glAvg = calculateGLAverage(grades);
 
-  // Wenn beide vorhanden sind, durchschnitt der beiden
+  // Wenn beide vorhanden sind, zählt GL doppelt.
   if (klAvg !== null && glAvg !== null) {
-    return (klAvg + glAvg) / 2;
+    return (klAvg + (2 * glAvg)) / 3;
   }
 
   // Wenn nur eines vorhanden, das zurückgeben
@@ -106,4 +104,15 @@ export function getGradeLabel(grade: number): string {
 export function formatGrade(grade: number | null): string {
   if (grade === null) return '-';
   return grade.toFixed(1);
+}
+
+/**
+ * Formatiert Durchschnittswerte immer mit 2 Nachkommastellen
+ */
+export function formatAverageGrade(grade: number | null): string {
+  if (grade === null) return '-';
+  return grade.toLocaleString('de-DE', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 }

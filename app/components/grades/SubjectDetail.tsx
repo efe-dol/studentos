@@ -8,6 +8,7 @@ import {
   calculateSubjectAverage,
   calculateKLAverage,
   calculateGLAverage,
+  formatAverageGrade,
   formatGrade,
   getGradeLabel,
 } from '@/lib/grades/calculator';
@@ -119,7 +120,7 @@ export default function SubjectDetail({
         <div className="bg-gradient-to-br from-blue-500/10 to-purple-500/10 border border-blue-500/20 rounded-lg p-4 sm:p-6 animate-in fade-in duration-300 delay-150" style={{animationFillMode: 'both'}}>
           <div className="text-xs sm:text-sm font-medium text-gray-400 mb-1">Fachdurchschnitt</div>
           <div className="text-2xl sm:text-3xl font-bold text-white">
-            {average !== null ? formatGrade(average) : '-'}
+            {average !== null ? formatAverageGrade(average) : '-'}
           </div>
           {average !== null && (
             <div className="text-xs text-gray-400 mt-2">{getGradeLabel(average)}</div>
@@ -130,7 +131,7 @@ export default function SubjectDetail({
         <div className="bg-gradient-to-br from-green-500/10 to-yellow-500/10 border border-green-500/20 rounded-lg p-4 sm:p-6 animate-in fade-in duration-300 delay-200" style={{animationFillMode: 'both'}}>
           <div className="text-xs sm:text-sm font-medium text-gray-400 mb-1">KL Durchschnitt</div>
           <div className="text-2xl sm:text-3xl font-bold text-white">
-            {klAverage !== null ? formatGrade(klAverage) : '-'}
+            {klAverage !== null ? formatAverageGrade(klAverage) : '-'}
           </div>
           <div className="text-xs text-gray-500 mt-2">Kleine Leistungsnachweise</div>
         </div>
@@ -139,7 +140,7 @@ export default function SubjectDetail({
         <div className="bg-gradient-to-br from-orange-500/10 to-red-500/10 border border-orange-500/20 rounded-lg p-4 sm:p-6 animate-in fade-in duration-300 delay-250" style={{animationFillMode: 'both'}}>
           <div className="text-xs sm:text-sm font-medium text-gray-400 mb-1">GL Durchschnitt</div>
           <div className="text-2xl sm:text-3xl font-bold text-white">
-            {glAverage !== null ? formatGrade(glAverage) : '-'}
+            {glAverage !== null ? formatAverageGrade(glAverage) : '-'}
           </div>
           <div className="text-xs text-gray-500 mt-2">Große Leistungsnachweise (2x)</div>
         </div>

@@ -5,6 +5,7 @@ import { useSubjects, useGrades } from '@/lib/grades/hooks';
 import {
   calculateOverallAverage,
   calculateSubjectAverage,
+  formatAverageGrade,
   formatGrade,
   getGradeLabel,
 } from '@/lib/grades/calculator';
@@ -171,7 +172,7 @@ export default function GradesTab() {
             <p className="text-sm font-medium text-gray-400">Durchschnitt gesamt</p>
             <div className="flex items-baseline gap-3">
               <div className="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
-                {overallAverage > 0 ? formatGrade(overallAverage) : '—'}
+                {overallAverage > 0 ? formatAverageGrade(overallAverage) : '—'}
               </div>
               {overallAverage > 0 && (
                 <span className="text-lg text-gray-400">{getGradeLabel(overallAverage)}</span>
@@ -241,7 +242,7 @@ export default function GradesTab() {
                               : 'text-gray-500'
                           }`}
                         >
-                          {subjectAverage && subjectAverage > 0 ? formatGrade(subjectAverage) : '—'}
+                          {subjectAverage && subjectAverage > 0 ? formatAverageGrade(subjectAverage) : '—'}
                         </span>
                       </div>
                       <div className="flex items-center justify-between px-1">
@@ -298,7 +299,7 @@ export default function GradesTab() {
                               : 'text-gray-500'
                           }`}
                         >
-                          {subjectAverage && subjectAverage > 0 ? formatGrade(subjectAverage) : '—'}
+                          {subjectAverage && subjectAverage > 0 ? formatAverageGrade(subjectAverage) : '—'}
                         </span>
                       </div>
                       <div className="flex items-center justify-between px-1">

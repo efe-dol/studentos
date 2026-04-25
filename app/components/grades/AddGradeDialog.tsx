@@ -249,6 +249,23 @@ export default function AddGradeDialog({
                 <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-2">
                   Einzelgewichtung
                 </label>
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {[0.5, 1, 1.5, 2].map((preset) => (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => setWeight(preset)}
+                      className={`px-2.5 py-1 rounded-md text-xs border transition-colors ${
+                        weight === preset
+                          ? 'bg-blue-500/20 border-blue-500/50 text-blue-300'
+                          : 'bg-white/5 border-white/10 text-gray-300 hover:bg-white/10'
+                      }`}
+                      disabled={isSubmitting}
+                    >
+                      {String(preset).replace('.', ',')}x
+                    </button>
+                  ))}
+                </div>
                 <div className="flex items-center gap-2">
                   <input
                     type="number"
@@ -256,7 +273,10 @@ export default function AddGradeDialog({
                     max="10"
                     step="0.1"
                     value={weight}
-                    onChange={(e) => setWeight(parseFloat(e.target.value))}
+                    onChange={(e) => {
+                      const next = parseFloat(e.target.value);
+                      if (!Number.isNaN(next)) setWeight(next);
+                    }}
                     className="flex-1 text-sm bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/25 transition-all"
                     disabled={isSubmitting}
                   />
