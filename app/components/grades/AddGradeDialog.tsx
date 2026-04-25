@@ -102,6 +102,11 @@ export default function AddGradeDialog({
   }, [isSubmitting, onClose, resetForm]);
 
   const applyCustomWeight = useCallback(() => {
+    if (!customWeightInput.trim()) {
+      if (error) setError('');
+      return;
+    }
+
     const parsed = parseWeightInput(customWeightInput);
     if (parsed === null) {
       setError('Eigenes Gewicht ist ungültig. Beispiel: 0,75');
@@ -128,7 +133,19 @@ export default function AddGradeDialog({
       return;
     }
 
-    if (!Number.isFinite(weight) || weight <= 0) {
+    // Use the currently visible custom input as source of truth on submit
+    // to avoid stale state when blur/setState and submit happen close together.
+    let effectiveWeight = weight;
+    if (customWeightInput.trim()) {
+      const parsedFromInput = parseWeightInput(customWeightInput);
+      if (parsedFromInput === null) {
+        setError('Eigenes Gewicht ist ungültig. Beispiel: 0,75');
+        return;
+      }
+      effectiveWeight = parsedFromInput;
+    }
+
+    if (!Number.isFinite(effectiveWeight) || effectiveWeight <= 0) {
       setError('Gewicht muss größer als 0 sein');
       return;
     }
@@ -138,7 +155,7 @@ export default function AddGradeDialog({
       await onAdd({
         grade: gradeNum,
         gradeType,
-        weight: weight !== 1 ? weight : undefined,
+        weight: effectiveWeight !== 1 ? effectiveWeight : undefined,
         description: description || undefined,
         gradeDate: gradeDate || undefined,
       });
