@@ -48,7 +48,18 @@ export default function AddGradeDialog({
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [customWeightInput, setCustomWeightInput] = useState('');
   const [isMounted, setIsMounted] = useState(false);
+
+  const parseWeightInput = useCallback((value: string): number | null => {
+    const normalized = value.trim().replace(',', '.');
+    if (!normalized) return null;
+
+    const parsed = Number(normalized);
+    if (!Number.isFinite(parsed) || parsed <= 0) return null;
+
+    return parsed;
+  }, []);
 
   useEffect(() => {
     setIsMounted(true);
@@ -63,6 +74,7 @@ export default function AddGradeDialog({
     setGradeDate(new Date().toISOString().split('T')[0]);
     setShowAdvanced(false);
     setError('');
+    setCustomWeightInput('');
   }, []);
 
   useEffect(() => {
@@ -76,6 +88,7 @@ export default function AddGradeDialog({
       setGradeDate(initialData.gradeDate ? String(initialData.gradeDate).split('T')[0] : new Date().toISOString().split('T')[0]);
       setShowAdvanced(Boolean(initialData.description) || (initialData.weight ?? 1.0) !== 1.0);
       setError('');
+      setCustomWeightInput(String(initialData.weight ?? 1.0).replace('.', ','));
       return;
     }
 
@@ -87,6 +100,18 @@ export default function AddGradeDialog({
     resetForm();
     onClose();
   }, [isSubmitting, onClose, resetForm]);
+
+  const applyCustomWeight = useCallback(() => {
+    const parsed = parseWeightInput(customWeightInput);
+    if (parsed === null) {
+      setError('Eigenes Gewicht ist ungültig. Beispiel: 0,75');
+      return;
+    }
+
+    setWeight(parsed);
+    setCustomWeightInput(String(parsed).replace('.', ','));
+    if (error) setError('');
+  }, [customWeightInput, error, parseWeightInput]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -103,7 +128,7 @@ export default function AddGradeDialog({
       return;
     }
 
-    if (weight <= 0) {
+    if (!Number.isFinite(weight) || weight <= 0) {
       setError('Gewicht muss größer als 0 sein');
       return;
     }
@@ -254,7 +279,11 @@ export default function AddGradeDialog({
                     <button
                       key={preset}
                       type="button"
-                      onClick={() => setWeight(preset)}
+                      onClick={() => {
+                        setWeight(preset);
+                        setCustomWeightInput(String(preset).replace('.', ','));
+                        if (error) setError('');
+                      }}
                       className={`px-2.5 py-1 rounded-md text-xs border transition-colors ${
                         weight === preset
                           ? 'bg-blue-500/20 border-blue-500/50 text-blue-300'
@@ -268,22 +297,32 @@ export default function AddGradeDialog({
                 </div>
                 <div className="flex items-center gap-2">
                   <input
-                    type="number"
-                    min="0.1"
-                    max="10"
-                    step="0.1"
-                    value={weight}
-                    onChange={(e) => {
-                      const next = parseFloat(e.target.value);
-                      if (!Number.isNaN(next)) setWeight(next);
+                    type="text"
+                    inputMode="decimal"
+                    value={customWeightInput}
+                    onChange={(e) => setCustomWeightInput(e.target.value)}
+                    onBlur={applyCustomWeight}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        applyCustomWeight();
+                      }
                     }}
+                    placeholder="Eigener Wert z.B. 0,75"
                     className="flex-1 text-sm bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/25 transition-all"
                     disabled={isSubmitting}
                   />
-                  <span className="text-xs text-gray-400">x</span>
+                  <button
+                    type="button"
+                    onClick={applyCustomWeight}
+                    className="px-3 py-2 rounded-lg text-xs bg-white/10 hover:bg-white/20 border border-white/10 text-gray-200 transition-colors"
+                    disabled={isSubmitting}
+                  >
+                    Setzen
+                  </button>
                 </div>
                 {weight !== 1.0 && (
-                  <p className="text-xs text-gray-500 mt-1">Diese Note zählt {weight}x</p>
+                  <p className="text-xs text-gray-500 mt-1">Diese Note zählt {String(weight).replace('.', ',')}x</p>
                 )}
               </div>
             </div>

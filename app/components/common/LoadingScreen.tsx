@@ -16,7 +16,7 @@ export default function LoadingScreen() {
           <div className="relative w-20 h-20">
             <div className="absolute inset-0 rounded-full border-4 border-white/10"></div>
             <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-blue-400 border-r-purple-400 animate-spin"></div>
-            <div className="absolute inset-2 rounded-full border-2 border-transparent border-b-blue-400 animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }}></div>
+            <div className="absolute inset-2 rounded-full border-2 border-transparent border-b-blue-400 animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.2s' }}></div>
           </div>
         </div>
 

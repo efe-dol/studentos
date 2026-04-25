@@ -59,6 +59,7 @@ const toDisplayName = (value?: string) => {
 
 export default function SettingsPage() {
   const FIXED_SCHOOL_NAME = 'Gymnasium Weilheim i.OB';
+  const NOTIFICATIONS_DEV_NOTICE = 'Benachrichtigungen funktionieren aktuell noch nicht. Diese Funktion ist in Entwicklung.';
   const [user, setUser] = useState<User | null>(null);
   const [, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -543,7 +544,7 @@ export default function SettingsPage() {
               }`}
             >
               <Bell className="w-4 h-4" />
-              Benachrichtigungen
+              Benachrichtigungen (in Entwicklung)
             </button>
             <button
               onClick={() => setActiveTab('school-years')}
@@ -668,6 +669,12 @@ export default function SettingsPage() {
                   Benachrichtigungen
                 </h2>
 
+                <div className="mb-4 p-4 rounded-lg bg-yellow-500/10 border border-yellow-500/20 content-fade-in">
+                  <p className="text-yellow-300 text-sm">
+                    {NOTIFICATIONS_DEV_NOTICE}
+                  </p>
+                </div>
+
                 {!pushSupported ? (
                   <div className="p-4 rounded-lg bg-yellow-500/10 border border-yellow-500/20 content-fade-in">
                     <p className="text-yellow-300 text-sm">
@@ -680,31 +687,22 @@ export default function SettingsPage() {
                       <div className="min-w-0">
                         <h3 className="font-medium text-white">Push-Benachrichtigungen</h3>
                         <p className="text-sm text-gray-400 mt-1">
-                          Erhalte Benachrichtigungen zu Terminen und Meldungen direkt auf dein Gerät
+                          Geplant: Benachrichtigungen zu Terminen und Meldungen direkt auf dein Gerät.
                         </p>
                       </div>
                       <button
                         onClick={pushSubscribed ? handleDisablePush : handleEnablePush}
-                        disabled={pushLoading}
+                        disabled
                         className={`w-full sm:w-auto px-6 py-2 rounded-lg font-medium transition-all flex items-center justify-center gap-2 hover:-translate-y-0.5 active:translate-y-0 duration-200 ${
                           pushSubscribed
                             ? 'bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 text-red-300'
                             : 'bg-green-500/20 hover:bg-green-500/30 border border-green-500/30 text-green-300'
                         } disabled:opacity-50`}
                       >
-                        {pushLoading ? (
-                          <>Lädt...</>
-                        ) : pushSubscribed ? (
-                          <>
-                            <BellOff className="w-4 h-4" />
-                            Deaktivieren
-                          </>
-                        ) : (
-                          <>
-                            <Bell className="w-4 h-4" />
-                            Aktivieren
-                          </>
-                        )}
+                        <>
+                          <BellOff className="w-4 h-4" />
+                          In Entwicklung
+                        </>
                       </button>
                     </div>
 
@@ -712,7 +710,7 @@ export default function SettingsPage() {
                       <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/20 content-fade-in">
                         <p className="text-green-300 text-sm flex items-center gap-2">
                           <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
-                          Push-Benachrichtigungen sind aktiviert
+                          Hinweis: Push-Benachrichtigungen sind noch in Entwicklung
                         </p>
                       </div>
                     )}
@@ -721,7 +719,7 @@ export default function SettingsPage() {
                       <div className="p-4 rounded-lg bg-gray-500/10 border border-gray-500/20 content-fade-in">
                         <p className="text-gray-300 text-sm flex items-center gap-2">
                           <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
-                          Push-Benachrichtigungen sind deaktiviert
+                          Push-Benachrichtigungen sind derzeit nicht verfuegbar (in Entwicklung)
                         </p>
                       </div>
                     )}

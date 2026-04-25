@@ -63,6 +63,9 @@ export default function Home() {
             Stundenplan, Hausaufgaben, Noten, Termine und Benachrichtigungen – klar strukturiert,
             schnell erreichbar und optimiert für die Nutzung als App auf deinem Smartphone.
           </p>
+          <p className="text-sm text-yellow-300 max-w-3xl mx-auto">
+            Hinweis: Benachrichtigungen funktionieren aktuell noch nicht. Diese Funktion ist in Entwicklung.
+          </p>
 
           <div className="flex items-center justify-center">
             <a
@@ -89,7 +92,7 @@ export default function Home() {
             </div>
             <div className="p-4 rounded-xl bg-white/5 border border-white/10 flex flex-col items-center gap-2">
               <Bell className="w-6 h-6 text-cyan-300" />
-              <p className="text-xs md:text-sm text-gray-300">Benachrichtigungen</p>
+              <p className="text-xs md:text-sm text-gray-300">Benachrichtigungen (in Entwicklung)</p>
             </div>
           </div>
         </div>

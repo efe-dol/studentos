@@ -157,6 +157,7 @@ const DASHBOARD_VERSION = 'v0.2.2';
 
 export default function Dashboard() {
   const FIXED_SCHOOL_NAME = 'Gymnasium Weilheim i.OB';
+  const NOTIFICATIONS_DEV_NOTICE = 'Benachrichtigungen funktionieren aktuell noch nicht. Diese Funktion ist in Entwicklung.';
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [todos, setTodos] = useState<Todo[]>([]);
@@ -1921,30 +1922,29 @@ export default function Dashboard() {
                 <div className="rounded-xl border border-white/10 bg-white/5 p-4 modal-field-5">
                   <p className="text-sm font-medium text-white mb-2">Push-Erinnerungen</p>
                   <p className="text-xs text-gray-400 mb-3">
-                    Du bekommst Erinnerungen automatisch 1 Woche und 1 Tag vor einem Termin.
+                    Geplant: Erinnerungen 1 Woche und 1 Tag vor einem Termin.
+                  </p>
+                  <p className="text-xs text-yellow-300 mb-3">
+                    {NOTIFICATIONS_DEV_NOTICE}
                   </p>
 
                   {pushSubscribed ? (
                     <button
                       onClick={handleDisablePush}
-                      disabled={pushLoading}
+                      disabled
                       className="w-full py-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 text-white font-medium transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                     >
                       <BellOff className="w-4 h-4" />
-                      {pushLoading ? 'Wird deaktiviert...' : 'Push deaktivieren'}
+                      In Entwicklung
                     </button>
                   ) : (
                     <button
                       onClick={handleEnablePush}
-                      disabled={pushLoading || !pushSupported}
+                      disabled
                       className="w-full py-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white font-medium transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                     >
                       <Bell className="w-4 h-4" />
-                      {!pushSupported
-                        ? 'Push nicht unterstützt'
-                        : pushLoading
-                        ? 'Wird aktiviert...'
-                        : 'Push aktivieren'}
+                      In Entwicklung
                     </button>
                   )}
                 </div>
