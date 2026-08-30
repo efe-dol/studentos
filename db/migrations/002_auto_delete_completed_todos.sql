@@ -1,12 +1,21 @@
 -- Erstelle Funktion zum automatischen Löschen von erledigten ToDos nach 30 Tagen
+-- SECURITY DEFINER: fixed search_path + kein PUBLIC-EXECUTE (siehe Migration 019/020).
 CREATE OR REPLACE FUNCTION public.delete_old_completed_todos()
-RETURNS void AS $$
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
 BEGIN
   DELETE FROM public.todos
   WHERE is_completed = TRUE
   AND updated_at < NOW() - INTERVAL '30 days';
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
+
+REVOKE ALL ON FUNCTION public.delete_old_completed_todos() FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.delete_old_completed_todos() FROM anon;
+REVOKE ALL ON FUNCTION public.delete_old_completed_todos() FROM authenticated;
 
 -- Kommentar zur Funktion
 COMMENT ON FUNCTION public.delete_old_completed_todos() IS 'Löscht erledigte ToDos, die älter als 30 Tage sind';

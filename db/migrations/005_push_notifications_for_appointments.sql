@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS public.push_subscriptions (
   endpoint TEXT NOT NULL UNIQUE,
   p256dh TEXT NOT NULL,
   auth TEXT NOT NULL,
-  user_agent TEXT,
+  -- user_agent bewusst nicht gespeichert (Datenminimierung, siehe Migration 021)
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );

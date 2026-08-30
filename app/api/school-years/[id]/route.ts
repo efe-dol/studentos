@@ -36,7 +36,7 @@ export async function PATCH(
         .single();
 
       if (updateError || !updated) {
-        return NextResponse.json({ error: updateError?.message || 'Schuljahr konnte nicht aktiviert werden.' }, { status: 500 });
+        return NextResponse.json({ error: 'Schuljahr konnte nicht aktiviert werden.' }, { status: 500 });
       }
 
       await supabase
@@ -74,7 +74,7 @@ export async function PATCH(
       .single();
 
     if (updateError || !updated) {
-      return NextResponse.json({ error: updateError?.message || 'Schuljahr konnte nicht aktualisiert werden.' }, { status: 500 });
+      return NextResponse.json({ error: 'Schuljahr konnte nicht aktualisiert werden.' }, { status: 500 });
     }
 
     return NextResponse.json({ schoolYear: updated }, { status: 200 });
@@ -109,7 +109,7 @@ export async function DELETE(
       .order('created_at', { ascending: false });
 
     if (yearsError) {
-      return NextResponse.json({ error: yearsError.message }, { status: 500 });
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 
     const schoolYears = allYears || [];
@@ -149,7 +149,7 @@ export async function DELETE(
         .eq('user_id', user.id);
 
       if (activateError) {
-        return NextResponse.json({ error: activateError.message }, { status: 500 });
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
       }
 
       await supabase
@@ -165,7 +165,7 @@ export async function DELETE(
       .eq('user_id', user.id);
 
     if (deleteError) {
-      return NextResponse.json({ error: deleteError.message }, { status: 500 });
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 
     return NextResponse.json({ success: true }, { status: 200 });

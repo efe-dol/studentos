@@ -6,6 +6,7 @@ export interface Subject {
   name: string;
   type: 'HAUPTFACH' | 'NEBENFACH';
   color: string;
+  sa_double: boolean;
   default_room: string | null;
   default_teacher: string | null;
   created_at: string;
@@ -57,7 +58,8 @@ export const useSubjects = () => {
       type: 'HAUPTFACH' | 'NEBENFACH',
       color: string,
       defaultRoom?: string,
-      defaultTeacher?: string
+      defaultTeacher?: string,
+      saDouble: boolean = true
     ) => {
       setError(null);
       try {
@@ -70,6 +72,7 @@ export const useSubjects = () => {
             color,
             default_room: defaultRoom,
             default_teacher: defaultTeacher,
+            sa_double: saDouble,
           }),
         });
         if (!response.ok) {

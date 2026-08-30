@@ -29,32 +29,37 @@ export default function ImpressumPage() {
             <section className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-6 sm:p-8 content-fade-in">
               <h2 className="text-xl sm:text-2xl font-semibold mb-4 flex items-center gap-2">
                 <Building2 className="w-5 h-5" />
-                Angaben gemäß § 5 DDG
+                Anbieter &amp; Zweck
               </h2>
               <p className="text-gray-300 leading-relaxed text-sm sm:text-base">
-                StudentOS
-                <br />
-                StudentOS ist ein privates, nicht-kommerzielles Projekt von Efe Dolaman, das ohne Gewinnerzielungsabsicht betrieben wird.
+                StudentOS ist ein rein privates, nicht-kommerzielles Projekt von Efe Dolaman, das ohne
+                Gewinnerzielungsabsicht ausschließlich im privaten Freundes- und Familienkreis betrieben wird.
               </p>
               <p className="text-gray-300 leading-relaxed text-sm sm:text-base mt-4">
-                weitere Informationen befinden sich auf der{' '}
+                Da es sich nicht um ein geschäftsmäßiges Angebot im Sinne des § 5 DDG handelt, besteht keine
+                gesetzliche Impressumspflicht. Die nachfolgenden Kontaktangaben werden freiwillig zur
+                Verfügung gestellt.
+              </p>
+              <p className="text-gray-300 leading-relaxed text-sm sm:text-base mt-4">
+                Informationen zur Datenverarbeitung findest du auf der{' '}
                 <Link
                   href="/privacy"
                   className="font-bold bg-gradient-to-r from-blue-300 via-purple-300 to-pink-300 bg-clip-text text-transparent underline underline-offset-4"
                 >
-                  Datenschutz & Hinweise
+                  Datenschutz &amp; Hinweise
                 </Link>{' '}
                 Seite.
               </p>
             </section>
 
             <section className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-6 sm:p-8 content-fade-in">
-              <h2 className="text-xl sm:text-2xl font-semibold mb-4">Vertreten durch</h2>
+              <h2 className="text-xl sm:text-2xl font-semibold mb-4">Verantwortlich</h2>
               <p className="text-gray-300 leading-relaxed text-sm sm:text-base">
-                Efe Dolaman
+                Efe Dolaman (Privatperson)
               </p>
-              <p className="text-gray-300 leading-relaxed text-sm sm:text-base">
-                (Adresse zum Schutz der betroffenen Person nicht öffentlich angegeben)
+              <p className="text-gray-300 leading-relaxed text-sm sm:text-base mt-1">
+                Eine ladungsfähige Anschrift wird aus Gründen des Persönlichkeitsschutzes nicht öffentlich
+                angegeben und ist auf berechtigte Anfrage über die unten genannte E-Mail-Adresse erhältlich.
               </p>
             </section>
 

@@ -46,7 +46,7 @@ export async function PATCH(
       .single();
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 
     if (!appointment) {
@@ -61,7 +61,7 @@ export async function PATCH(
     );
 
     if (reminderError) {
-      return NextResponse.json({ error: reminderError.message }, { status: 500 });
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 
     return NextResponse.json({ appointment }, { status: 200 });
@@ -96,7 +96,7 @@ export async function DELETE(
       .eq('school_year_id', activeSchoolYearId);
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 
     return NextResponse.json({ message: 'Appointment deleted' }, { status: 200 });

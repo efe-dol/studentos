@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
       .order('start_time', { ascending: true });
 
     if (scheduleError) {
-      return NextResponse.json({ error: scheduleError.message }, { status: 500 });
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 
     const entries = scheduleEntries || [];
@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
         .in('id', subjectIds);
 
       if (subjectError) {
-        return NextResponse.json({ error: subjectError.message }, { status: 500 });
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
       }
 
       subjects = (subjectData || []) as typeof subjects;
@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
 
     if (shareError || !share) {
       return NextResponse.json(
-        { error: shareError?.message || 'Fehler beim Erstellen des Share-Links' },
+        { error: 'Fehler beim Erstellen des Share-Links' },
         { status: 500 }
       );
     }
@@ -119,6 +119,35 @@ export async function POST(request: NextRequest) {
       },
       { status: 201 }
     );
+  } catch {
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+// Revoke all share links the caller has created (RLS restricts the delete to
+// rows where created_by = auth.uid()).
+export async function DELETE() {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { error } = await supabase
+      .from('schedule_shares')
+      .delete()
+      .eq('created_by', user.id);
+
+    if (error) {
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true }, { status: 200 });
   } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }

@@ -12,7 +12,8 @@ interface AddSubjectDialogProps {
     type: 'HAUPTFACH' | 'NEBENFACH',
     color: string,
     defaultRoom?: string,
-    defaultTeacher?: string
+    defaultTeacher?: string,
+    saDouble?: boolean
   ) => Promise<void>;
 }
 
@@ -30,6 +31,7 @@ export default function AddSubjectDialog({ isOpen, onClose, onAdd }: AddSubjectD
   const [color, setColor] = useState('#3b82f6');
   const [defaultRoom, setDefaultRoom] = useState('');
   const [defaultTeacher, setDefaultTeacher] = useState('');
+  const [saDouble, setSaDouble] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [isMounted, setIsMounted] = useState(false);
@@ -45,6 +47,7 @@ export default function AddSubjectDialog({ isOpen, onClose, onAdd }: AddSubjectD
     setColor('#3b82f6');
     setDefaultRoom('');
     setDefaultTeacher('');
+    setSaDouble(true);
     setError('');
   }, []);
 
@@ -70,7 +73,7 @@ export default function AddSubjectDialog({ isOpen, onClose, onAdd }: AddSubjectD
       setError('');
 
       try {
-        await onAdd(name.trim(), type, color, defaultRoom, defaultTeacher);
+        await onAdd(name.trim(), type, color, defaultRoom, defaultTeacher, type === 'HAUPTFACH' ? saDouble : true);
         handleClose(true);
       } catch (err) {
         setError(
@@ -80,7 +83,7 @@ export default function AddSubjectDialog({ isOpen, onClose, onAdd }: AddSubjectD
         setIsLoading(false);
       }
     },
-    [name, type, color, defaultRoom, defaultTeacher, onAdd, handleClose]
+    [name, type, color, defaultRoom, defaultTeacher, saDouble, onAdd, handleClose]
   );
 
   if (!isOpen || !isMounted) return null;
@@ -145,6 +148,26 @@ export default function AddSubjectDialog({ isOpen, onClose, onAdd }: AddSubjectD
               ))}
             </div>
           </div>
+
+          {type === 'HAUPTFACH' && (
+            <div className="space-y-2 animate-in fade-in slide-in-from-left-4 duration-300 delay-150">
+              <div className="rounded-lg border border-white/10 bg-white/5 p-3">
+                <label className="flex items-center justify-between gap-3 text-sm text-gray-200">
+                  <span>Schulaufgaben doppelt gewichten</span>
+                  <input
+                    type="checkbox"
+                    checked={saDouble}
+                    onChange={(e) => setSaDouble(e.target.checked)}
+                    disabled={isLoading}
+                    className="h-4 w-4 rounded border-white/20 bg-black/40"
+                  />
+                </label>
+                <p className="text-xs text-gray-400 mt-1">
+                  Für Fächer wie Physik oder Chemie ausschalten (Schulaufgabe zählt dann einfach).
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Color Selection */}
           <div className="space-y-2 animate-in fade-in slide-in-from-left-4 duration-300 delay-200">

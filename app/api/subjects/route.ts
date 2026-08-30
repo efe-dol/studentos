@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
       .order('name', { ascending: true });
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
+      return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
     }
 
     return NextResponse.json(data);
@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
 
     const activeSchoolYearId = await getOrCreateActiveSchoolYearId(supabase, user.id);
 
-    const { name, type, color, default_room, default_teacher } = await request.json();
+    const { name, type, color, default_room, default_teacher, sa_double } = await request.json();
 
     if (!name || !type || !color) {
       return NextResponse.json(
@@ -61,22 +61,30 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { data, error } = await supabase
+    const baseInsert = {
+      user_id: user.id,
+      school_year_id: activeSchoolYearId,
+      name,
+      type,
+      color,
+      default_room: default_room?.trim() || null,
+      default_teacher: default_teacher?.trim() || null,
+    };
+
+    // Nur Hauptfächer können die doppelte Schulaufgaben-Gewichtung abschalten.
+    let { data, error } = await supabase
       .from('subjects')
-      .insert({
-        user_id: user.id,
-        school_year_id: activeSchoolYearId,
-        name,
-        type,
-        color,
-        default_room: default_room?.trim() || null,
-        default_teacher: default_teacher?.trim() || null,
-      })
+      .insert({ ...baseInsert, sa_double: type === 'HAUPTFACH' ? sa_double !== false : true })
       .select()
       .single();
 
+    // Fallback, falls Migration 022 (Spalte sa_double) noch nicht eingespielt ist.
+    if (error && /sa_double/i.test(`${error.message} ${error.details ?? ''}`)) {
+      ({ data, error } = await supabase.from('subjects').insert(baseInsert).select().single());
+    }
+
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
+      return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
     }
 
     return NextResponse.json(data, { status: 201 });

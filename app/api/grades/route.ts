@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
     const { data, error } = await query.order('grade_date', { ascending: false });
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
+      return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
     }
 
     return NextResponse.json(data);
@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
+      return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
     }
 
     return NextResponse.json(data, { status: 201 });

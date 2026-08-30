@@ -23,6 +23,9 @@
 # misc
 .DS_Store
 *.pem
+# macOS AppleDouble / resource-fork sidecar files
+._*
+.AppleDouble
 
 # debug
 npm-debug.log*

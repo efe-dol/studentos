@@ -45,11 +45,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Ungültiger Share-Link.' }, { status: 400 });
     }
 
-    const { data: share, error: shareError } = await supabase
-      .from('schedule_shares')
-      .select('payload, expires_at')
-      .eq('token', token)
-      .single();
+    const { data: shareRows, error: shareError } = await supabase
+      .rpc('get_schedule_share', { share_token: token });
+
+    const share = Array.isArray(shareRows) ? shareRows[0] : shareRows;
 
     if (shareError || !share) {
       return NextResponse.json({ error: 'Share-Link nicht gefunden.' }, { status: 404 });
@@ -78,7 +77,7 @@ export async function POST(request: NextRequest) {
       .eq('school_year_id', activeSchoolYearId);
 
     if (existingSubjectsError) {
-      return NextResponse.json({ error: existingSubjectsError.message }, { status: 500 });
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 
     const userSubjects = existingSubjects || [];
@@ -113,7 +112,7 @@ export async function POST(request: NextRequest) {
 
       if (insertSubjectError || !insertedSubject) {
         return NextResponse.json(
-          { error: insertSubjectError?.message || 'Fächer konnten nicht importiert werden.' },
+          { error: 'Fächer konnten nicht importiert werden.' },
           { status: 500 }
         );
       }
@@ -158,7 +157,7 @@ export async function POST(request: NextRequest) {
       .insert(scheduleInserts);
 
     if (insertScheduleError) {
-      return NextResponse.json({ error: insertScheduleError.message }, { status: 500 });
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 
     return NextResponse.json(

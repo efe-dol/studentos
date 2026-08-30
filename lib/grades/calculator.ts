@@ -2,8 +2,13 @@
  * Berechnet den Durchschnitt der Noten basierend auf dem System:
  * KL (Kleine Leistungsnachweise): Mündlich, Kurzarbeit, Stegreifaufgabe
  * GL (Große Leistungsnachweise): Schulaufgabe
- * 
- * Fach-Durchschnitt = (KL-Durchschnitt + 2 * GL-Durchschnitt) / 3
+ *
+ * Fach-Durchschnitt mit doppelter Schulaufgabe:  (KL + 2 * GL) / 3
+ * Fach-Durchschnitt mit einfacher Schulaufgabe:  (KL + GL) / 2
+ *
+ * Ob die Schulaufgabe doppelt zählt, entscheidet das Fach (subject.sa_double,
+ * Standard: true). Deutsch/Mathe/Englisch zählen doppelt, Physik/Chemie z. B.
+ * einfach.
  */
 
 export interface Grade {
@@ -18,6 +23,8 @@ export interface Subject {
   name: string;
   type: 'HAUPTFACH' | 'NEBENFACH';
   color: string;
+  /** Ob die Schulaufgaben doppelt gewichtet werden. Standard: true. */
+  sa_double?: boolean;
   grades?: Grade[];
 }
 
@@ -50,15 +57,19 @@ export function calculateGLAverage(grades: Grade[]): number | null {
 }
 
 /**
- * Berechnet den Durchschnitt für ein einzelnes Fach
+ * Berechnet den Durchschnitt für ein einzelnes Fach.
+ * @param saDouble  ob die Schulaufgabe doppelt gewichtet wird (Standard: true)
  */
-export function calculateSubjectAverage(grades: Grade[]): number | null {
+export function calculateSubjectAverage(
+  grades: Grade[],
+  saDouble: boolean = true
+): number | null {
   const klAvg = calculateKLAverage(grades);
   const glAvg = calculateGLAverage(grades);
 
-  // Wenn beide vorhanden sind, zählt GL doppelt.
+  // Beide vorhanden: Schulaufgabe je nach Fach doppelt oder einfach.
   if (klAvg !== null && glAvg !== null) {
-    return (klAvg + (2 * glAvg)) / 3;
+    return saDouble ? (klAvg + 2 * glAvg) / 3 : (klAvg + glAvg) / 2;
   }
 
   // Wenn nur eines vorhanden, das zurückgeben
@@ -75,7 +86,7 @@ export function calculateSubjectAverage(grades: Grade[]): number | null {
 export function calculateOverallAverage(subjects: Subject[]): number | null {
   const averages = subjects
     .map(subject => ({
-      average: calculateSubjectAverage(subject.grades || []),
+      average: calculateSubjectAverage(subject.grades || [], subject.sa_double ?? true),
       subject,
     }))
     .filter(item => item.average !== null);

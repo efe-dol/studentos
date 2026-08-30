@@ -6,6 +6,9 @@ import AuthBackground from '@/app/components/common/AuthBackground';
 import LoadingScreen from '@/app/components/common/LoadingScreen';
 import Toast from '@/app/components/common/Toast';
 import GradesTab from '@/app/components/grades/GradesTab';
+import TodosTab from '@/app/components/todos/TodosTab';
+import Select from '@/app/components/common/Select';
+import { useDelayedFlag } from '@/lib/hooks/useDelayedFlag';
 import { calculateOverallAverage, getGradeLabel } from '@/lib/grades/calculator';
 import { Settings, CheckSquare, BookOpen, BarChart3, Calendar, Zap, Edit, UtensilsCrossed, ListTodo, Shield, AlertTriangle, X, Clock, Plus, Trash2, Bell, BellOff, Share2, Download, Heart, Info } from 'lucide-react';
 
@@ -18,7 +21,6 @@ type Profile = {
   first_name: string;
   last_name: string;
   class_name: string;
-  birthdate: string;
   school: string;
   role?: 'user' | 'admin';
 };
@@ -53,6 +55,7 @@ type HomeworkSubject = {
   name: string;
   color: string;
   type: 'HAUPTFACH' | 'NEBENFACH';
+  sa_double?: boolean;
   default_room?: string | null;
   default_teacher?: string | null;
 };
@@ -153,7 +156,7 @@ const SCHEDULE_PRESETS: SchedulePreset[] = [
   { id: 'lesson-10', label: 'Stunde 10', start: '15:05', end: '15:50' },
   { id: 'lesson-11', label: 'Stunde 11', start: '15:50', end: '16:35' },
 ];
-const DASHBOARD_VERSION = 'v0.2.4';
+const DASHBOARD_VERSION = 'v0.3.0';
 
 export default function Dashboard() {
   const FIXED_SCHOOL_NAME = 'Gymnasium Weilheim i.OB';
@@ -210,6 +213,7 @@ export default function Dashboard() {
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const supabase = createClient();
   const router = useRouter();
+  const showLoader = useDelayedFlag(loading);
 
   const extractFirstName = (value?: string) => {
     return String(value || '').trim().split(/\s+/)[0] || '';
@@ -270,6 +274,17 @@ export default function Dashboard() {
 
   const isAbortError = (error: unknown) => {
     return error instanceof DOMException && error.name === 'AbortError';
+  };
+
+  const fetchTodosPreview = async (signal?: AbortSignal) => {
+    try {
+      const response = await fetch('/api/todos?limit=5&sortBy=priority&onlyIncomplete=true', { signal });
+      if (!response.ok) return;
+      const data = await response.json();
+      setTodos(data.todos || []);
+    } catch (error) {
+      if (isAbortError(error)) return;
+    }
   };
 
   const fetchAppointments = async (limit = 5, signal?: AbortSignal) => {
@@ -488,6 +503,24 @@ export default function Dashboard() {
       } else {
         setToast({ message: 'Share-Link erstellt. Bitte manuell kopieren.', type: 'success' });
       }
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unbekannter Fehler';
+      setToast({ message, type: 'error' });
+    } finally {
+      setCreatingScheduleShare(false);
+    }
+  };
+
+  const handleRevokeScheduleShares = async () => {
+    setCreatingScheduleShare(true);
+    try {
+      const response = await fetch('/api/schedule-share', { method: 'DELETE' });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || 'Share-Links konnten nicht widerrufen werden.');
+      }
+      setScheduleShareInput('');
+      setToast({ message: 'Alle von dir erstellten Share-Links wurden widerrufen.', type: 'success' });
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Unbekannter Fehler';
       setToast({ message, type: 'error' });
@@ -862,12 +895,12 @@ export default function Dashboard() {
         // Fetch profile
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
-          .select('first_name, last_name, class_name, birthdate, school, role')
+          .select('first_name, last_name, class_name, school, role')
           .eq('id', session.user.id)
           .single();
 
         if (profileError) {
-          console.error('Profile fetch error:', profileError);
+          console.error('Profile fetch failed');
         }
 
         if (profileData) {
@@ -884,12 +917,11 @@ export default function Dashboard() {
         } else {
             const fallbackFirstName = getFallbackFirstName(session.user);
               // Fallback: setze einen Namen aus Auth-Metadaten (oder E-Mail)
-              setProfile({ 
-                first_name: fallbackFirstName, 
-                last_name: '', 
-                class_name: '', 
-                birthdate: '', 
-                school: FIXED_SCHOOL_NAME 
+              setProfile({
+                first_name: fallbackFirstName,
+                last_name: '',
+                class_name: '',
+                school: FIXED_SCHOOL_NAME
               });
             }
 
@@ -953,6 +985,7 @@ export default function Dashboard() {
 
     if (activeTab === 'dashboard') {
       fetchHomeworkSubjects(false, controller.signal);
+      fetchTodosPreview(controller.signal);
     }
 
     if (activeTab === 'appointments') {
@@ -1170,7 +1203,9 @@ export default function Dashboard() {
   }, [selectedSchedulePreset, scheduleDurationOverride]);
 
   if (loading) {
-    return <LoadingScreen />;
+    // Nur bei spürbarer Wartezeit (z. B. Login / langsames Backend) zeigen –
+    // nicht bei jedem Seitenwechsel aufblitzen lassen.
+    return showLoader ? <LoadingScreen /> : null;
   }
 
   return (
@@ -1200,16 +1235,63 @@ export default function Dashboard() {
 
       {/* Header */}
       <div className="relative z-10 border-b border-white/10 backdrop-blur-xl bg-white/5">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-start">
-          <div>
+        <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center gap-4">
+          <div className="min-w-0">
             <p className="text-gray-400 text-sm">{formatDate()}</p>
-            <h1 className="text-3xl font-semibold mt-2">
+            <h1 className="text-3xl font-semibold mt-2 truncate">
               {getGreeting()}, {toDisplayName(profile?.first_name) || 'Nutzer'}
             </h1>
           </div>
 
-          <div className="flex gap-3">
-            <button 
+          {/* Auf einen Blick */}
+          <div className="hidden lg:flex items-stretch gap-2">
+            <button
+              onClick={() => setActiveTab('subjects')}
+              className="group flex items-center gap-2.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20 px-3.5 py-2 transition-all"
+              title="Zu Fächer & Noten"
+            >
+              <BarChart3 className="w-4 h-4 text-blue-300" />
+              <span className="text-left leading-tight">
+                <span className="block text-[11px] text-gray-400">Ø Schnitt</span>
+                <span className="block text-sm font-semibold">
+                  {weightedAverage === null ? '—' : weightedAverage.toFixed(2)}
+                </span>
+              </span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('todos')}
+              className="group flex items-center gap-2.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20 px-3.5 py-2 transition-all"
+              title="Zu ToDos"
+            >
+              <CheckSquare className="w-4 h-4 text-emerald-300" />
+              <span className="text-left leading-tight">
+                <span className="block text-[11px] text-gray-400">Offen</span>
+                <span className="block text-sm font-semibold">
+                  {todos.length}{todos.length >= 5 ? '+' : ''}
+                </span>
+              </span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('appointments')}
+              className="group flex items-center gap-2.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20 px-3.5 py-2 transition-all max-w-[220px]"
+              title="Zu Terminen"
+            >
+              <Calendar className="w-4 h-4 text-fuchsia-300 flex-shrink-0" />
+              <span className="text-left leading-tight min-w-0">
+                <span className="block text-[11px] text-gray-400">Nächster Termin</span>
+                <span className="block text-sm font-semibold truncate">
+                  {upcomingAppointments[0]
+                    ? `${upcomingAppointments[0].name} · ${new Date(upcomingAppointments[0].starts_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })}`
+                    : 'Keiner'}
+                </span>
+              </span>
+            </button>
+          </div>
+
+          <div className="flex gap-3 flex-shrink-0">
+            <button
               onClick={() => router.push('/settings')}
               className="p-2 rounded-lg hover:bg-white/10 transition-all border border-white/10"
               title="Einstellungen"
@@ -1259,7 +1341,7 @@ export default function Dashboard() {
                 )}
               </div>
               <button
-                onClick={() => router.push('/todos')}
+                onClick={() => setActiveTab('todos')}
                 className="w-full mt-4 py-2 px-3 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 transition-all text-sm"
               >
                 Alle ToDos anzeigen
@@ -1457,34 +1539,27 @@ export default function Dashboard() {
                 <div className="space-y-4">
                   <div className="modal-field-1">
                     <label className="block text-sm font-medium mb-2 text-gray-300">Wochentag</label>
-                    <select
+                    <Select
                       value={scheduleWeekday}
-                      onChange={(event) => setScheduleWeekday(event.target.value as ScheduleEntry['weekday'])}
-                      className="w-full p-3 rounded-xl bg-white/5 border border-white/10 focus:border-cyan-500 focus:outline-none text-sm"
-                      style={{ colorScheme: 'dark' }}
-                    >
-                      {WEEKDAY_ORDER.map((weekday) => (
-                        <option key={weekday} value={weekday} className="bg-black text-white">
-                          {WEEKDAY_LABELS[weekday]}
-                        </option>
-                      ))}
-                    </select>
+                      onChange={(v) => setScheduleWeekday(v as ScheduleEntry['weekday'])}
+                      ariaLabel="Wochentag"
+                      options={WEEKDAY_ORDER.map((weekday) => ({ value: weekday, label: WEEKDAY_LABELS[weekday] }))}
+                    />
                   </div>
 
                   <div className="modal-field-2">
                     <label className="block text-sm font-medium mb-2 text-gray-300">Klassische Stundendauer</label>
-                    <select
-                      value={schedulePresetId}
-                      onChange={(event) => setSchedulePresetId(event.target.value)}
-                      className="w-full p-3 rounded-xl bg-white/5 border border-white/10 focus:border-cyan-500 focus:outline-none text-sm mb-3"
-                      style={{ colorScheme: 'dark' }}
-                    >
-                      {SCHEDULE_PRESETS.map((preset) => (
-                        <option key={preset.id} value={preset.id} className="bg-black text-white">
-                          {preset.label}: {preset.start} - {preset.end}
-                        </option>
-                      ))}
-                    </select>
+                    <div className="mb-3">
+                      <Select
+                        value={schedulePresetId}
+                        onChange={(v) => setSchedulePresetId(v)}
+                        ariaLabel="Klassische Stundendauer"
+                        options={SCHEDULE_PRESETS.map((preset) => ({
+                          value: preset.id,
+                          label: `${preset.label}: ${preset.start} - ${preset.end}`,
+                        }))}
+                      />
+                    </div>
 
                     <div className="rounded-xl border border-white/10 bg-white/5 p-3 mb-3">
                       <label className="flex items-center justify-between gap-3 text-sm text-gray-200">
@@ -1531,21 +1606,17 @@ export default function Dashboard() {
 
                   <div className="modal-field-3">
                     <label className="block text-sm font-medium mb-2 text-gray-300">Fach</label>
-                    <select
+                    <Select
                       value={scheduleSubjectId}
-                      onChange={(event) => setScheduleSubjectId(event.target.value)}
-                      className="w-full p-3 rounded-xl bg-white/5 border border-white/10 focus:border-cyan-500 focus:outline-none text-sm"
-                      style={{ colorScheme: 'dark' }}
-                    >
-                      <option value="" className="bg-black text-white">Fach wählen</option>
-                      <option value={SCHEDULE_BREAK_OPTION} className="bg-black text-white">Pause</option>
-                      <option value={SCHEDULE_FREE_OPTION} className="bg-black text-white">Freistunde</option>
-                      {homeworkSubjects.map((subject) => (
-                        <option key={subject.id} value={subject.id} className="bg-black text-white">
-                          {subject.name}
-                        </option>
-                      ))}
-                    </select>
+                      onChange={(v) => setScheduleSubjectId(v)}
+                      ariaLabel="Fach"
+                      placeholder="Fach wählen"
+                      options={[
+                        { value: SCHEDULE_BREAK_OPTION, label: 'Pause' },
+                        { value: SCHEDULE_FREE_OPTION, label: 'Freistunde' },
+                        ...homeworkSubjects.map((subject) => ({ value: subject.id, label: subject.name })),
+                      ]}
+                    />
                     {scheduleSubjectId && (
                       <div className="mt-2 flex items-center gap-2 text-xs text-gray-300">
                         {isBreakSelected ? (
@@ -1683,14 +1754,24 @@ export default function Dashboard() {
 
                 {scheduleEditMode && (
                   <div className="mb-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    <button
-                      onClick={handleCreateScheduleShare}
-                      disabled={creatingScheduleShare || scheduleEntries.length === 0}
-                      className="w-full py-2.5 px-3 rounded-lg bg-white/5 border border-white/15 text-gray-200 hover:bg-white/10 transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                    >
-                      <Share2 className="w-4 h-4" />
-                      {creatingScheduleShare ? 'Link wird erstellt...' : 'Stundenplan teilen'}
-                    </button>
+                    <div className="flex items-stretch gap-2">
+                      <button
+                        onClick={handleCreateScheduleShare}
+                        disabled={creatingScheduleShare || scheduleEntries.length === 0}
+                        className="flex-1 py-2.5 px-3 rounded-lg bg-white/5 border border-white/15 text-gray-200 hover:bg-white/10 transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                      >
+                        <Share2 className="w-4 h-4" />
+                        {creatingScheduleShare ? 'Link wird erstellt...' : 'Stundenplan teilen'}
+                      </button>
+                      <button
+                        onClick={handleRevokeScheduleShares}
+                        disabled={creatingScheduleShare}
+                        title="Alle von dir erstellten Share-Links widerrufen"
+                        className="py-2.5 px-3 rounded-lg bg-white/5 border border-white/15 text-gray-300 hover:bg-red-500/20 hover:text-red-200 transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
 
                     <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                       <input
@@ -2009,6 +2090,12 @@ export default function Dashboard() {
           </div>
         )}
 
+        {activeTab === 'todos' && (
+          <div className="content-fade-in">
+            <TodosTab onChange={() => fetchTodosPreview()} />
+          </div>
+        )}
+
         {activeTab === 'subjects' && (
           <div className="content-fade-in">
             <GradesTab />
@@ -2024,19 +2111,13 @@ export default function Dashboard() {
                 <div className="space-y-4">
                   <div className="modal-field-1">
                     <label className="block text-sm font-medium mb-2 text-gray-300">Fach</label>
-                    <select
+                    <Select
                       value={homeworkSubjectId}
-                      onChange={(event) => setHomeworkSubjectId(event.target.value)}
-                      className="w-full p-3 rounded-xl bg-white/5 border border-white/10 focus:border-cyan-500 focus:outline-none text-sm"
-                      style={{ colorScheme: 'dark' }}
-                    >
-                      <option value="" className="bg-black text-white">Fach wählen</option>
-                      {homeworkSubjects.map((subject) => (
-                        <option key={subject.id} value={subject.id} className="bg-black text-white">
-                          {subject.name}
-                        </option>
-                      ))}
-                    </select>
+                      onChange={(v) => setHomeworkSubjectId(v)}
+                      ariaLabel="Fach"
+                      placeholder="Fach wählen"
+                      options={homeworkSubjects.map((subject) => ({ value: subject.id, label: subject.name }))}
+                    />
                   </div>
 
                   <div className="modal-field-2">
@@ -2062,17 +2143,17 @@ export default function Dashboard() {
 
                   <div className="modal-field-4">
                     <label className="block text-sm font-medium mb-2 text-gray-300">Priorität</label>
-                    <select
+                    <Select
                       value={homeworkPriority}
-                      onChange={(event) => setHomeworkPriority(event.target.value as HomeworkItem['priority'])}
-                      className="w-full p-3 rounded-xl bg-white/5 border border-white/10 focus:border-cyan-500 focus:outline-none text-sm"
-                      style={{ colorScheme: 'dark' }}
-                    >
-                      <option value="low" className="bg-black text-white">Niedrig</option>
-                      <option value="medium" className="bg-black text-white">Mittel</option>
-                      <option value="high" className="bg-black text-white">Hoch</option>
-                      <option value="urgent" className="bg-black text-white">Dringend</option>
-                    </select>
+                      onChange={(v) => setHomeworkPriority(v as HomeworkItem['priority'])}
+                      ariaLabel="Priorität"
+                      options={[
+                        { value: 'low', label: 'Niedrig' },
+                        { value: 'medium', label: 'Mittel' },
+                        { value: 'high', label: 'Hoch' },
+                        { value: 'urgent', label: 'Dringend' },
+                      ]}
+                    />
                   </div>
 
                   <div className="modal-buttons-animate">
@@ -2150,13 +2231,7 @@ export default function Dashboard() {
           ].map((tab) => (
             <button
               key={tab.id}
-              onClick={() => {
-                if (tab.id === 'todos') {
-                  router.push('/todos');
-                } else {
-                  setActiveTab(tab.id);
-                }
-              }}
+              onClick={() => setActiveTab(tab.id)}
               className={`flex flex-col items-center gap-1 px-3 py-1.5 rounded-lg transition-all duration-300 nav-item-animate ${
                 activeTab === tab.id
                   ? 'bg-gradient-to-br from-blue-500/40 to-purple-500/40 border border-blue-400/50 text-white shadow-lg shadow-blue-500/20'

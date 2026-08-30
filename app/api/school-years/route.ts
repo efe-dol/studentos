@@ -28,7 +28,7 @@ export async function GET() {
       .order('created_at', { ascending: false });
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 
     return NextResponse.json({ schoolYears: data || [], activeYearId }, { status: 200 });
@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (insertError || !inserted) {
-      return NextResponse.json({ error: insertError?.message || 'Schuljahr konnte nicht erstellt werden.' }, { status: 500 });
+      return NextResponse.json({ error: 'Schuljahr konnte nicht erstellt werden.' }, { status: 500 });
     }
 
     await supabase

@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
       .eq('school_year_id', activeSchoolYearId);
 
     if (fetchError) {
-      return NextResponse.json({ error: fetchError.message }, { status: 400 });
+      return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
     }
 
     // 2. Identify bad subjects
@@ -70,8 +70,8 @@ export async function POST(request: NextRequest) {
       errors: errors.length > 0 ? errors : undefined,
       message: `Cleaned up ${deletedIds.length} invalid subject(s)`,
     });
-  } catch (error) {
-    console.error('Cleanup error:', error);
+  } catch {
+    console.error('Subject cleanup failed');
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

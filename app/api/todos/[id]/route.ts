@@ -37,7 +37,7 @@ export async function PATCH(
       .single();
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 
     if (!todo) {
@@ -73,7 +73,7 @@ export async function DELETE(
       .eq('school_year_id', activeSchoolYearId);
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 
     return NextResponse.json({ message: 'Todo deleted' }, { status: 200 });

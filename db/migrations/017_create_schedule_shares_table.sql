@@ -19,17 +19,33 @@ ON public.schedule_shares
 FOR INSERT
 WITH CHECK (auth.uid() = created_by);
 
+-- Direct reads are owner-only. Importing someone else's shared schedule goes
+-- through the SECURITY DEFINER function below, which requires knowledge of the
+-- unguessable token (see migration 019). The previous policy exposed every
+-- non-expired share (incl. teacher names + created_by) to any logged-in user.
 DROP POLICY IF EXISTS "Authenticated users can read active schedule shares" ON public.schedule_shares;
-CREATE POLICY "Authenticated users can read active schedule shares"
+DROP POLICY IF EXISTS "Users can read their own schedule shares" ON public.schedule_shares;
+CREATE POLICY "Users can read their own schedule shares"
 ON public.schedule_shares
 FOR SELECT
-USING (
-  auth.role() = 'authenticated'
-  AND expires_at > NOW()
-);
+USING (auth.uid() = created_by);
 
 DROP POLICY IF EXISTS "Users can delete their own schedule shares" ON public.schedule_shares;
 CREATE POLICY "Users can delete their own schedule shares"
 ON public.schedule_shares
 FOR DELETE
 USING (auth.uid() = created_by);
+
+CREATE OR REPLACE FUNCTION public.get_schedule_share(share_token UUID)
+RETURNS TABLE (payload JSONB, expires_at TIMESTAMPTZ)
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+  SELECT s.payload, s.expires_at
+  FROM public.schedule_shares s
+  WHERE s.token = share_token;
+$$;
+
+REVOKE ALL ON FUNCTION public.get_schedule_share(UUID) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.get_schedule_share(UUID) TO authenticated;

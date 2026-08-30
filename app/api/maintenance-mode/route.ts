@@ -39,7 +39,7 @@ export async function GET() {
       .single();
 
     if (error && !isMissingAppSettingsRelationError(error) && !isMissingMaintenanceModeColumnError(error)) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 
     if (error && (isMissingAppSettingsRelationError(error) || isMissingMaintenanceModeColumnError(error))) {
@@ -106,7 +106,7 @@ export async function PATCH(request: NextRequest) {
         );
       }
 
-      return NextResponse.json({ error: updateError.message }, { status: 500 });
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 
     if (updatedData) {
@@ -140,7 +140,7 @@ export async function PATCH(request: NextRequest) {
         );
       }
 
-      return NextResponse.json({ error: insertError.message }, { status: 500 });
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 
     return NextResponse.json({ maintenanceMode: Boolean(insertedData?.maintenance_mode) }, { status: 200 });

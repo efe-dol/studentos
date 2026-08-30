@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import AuthBackground from '@/app/components/common/AuthBackground';
 import LoadingScreen from '@/app/components/common/LoadingScreen';
+import { useDelayedFlag } from '@/lib/hooks/useDelayedFlag';
 import { Shield, AlertTriangle, Plus, Trash2, Edit as EditIcon, X, ArrowLeft, Users, Lock, Unlock, ToggleLeft, ToggleRight } from 'lucide-react';
 
 type MaintenanceMessage = {
@@ -63,6 +64,7 @@ export default function AdminPage() {
   
   const supabase = createClient();
   const router = useRouter();
+  const showLoader = useDelayedFlag(loading);
 
   const showAlert = (message: string, type: AlertPopup['type']) => {
     const titleByType: Record<AlertPopup['type'], string> = {
@@ -238,7 +240,7 @@ export default function AdminPage() {
     try {
       const { data: allMessages } = await supabase
         .from('maintenance_messages')
-        .select('*')
+        .select('id, message, is_active, created_at, updated_at')
         .order('created_at', { ascending: false });
 
       setMessages(allMessages || []);
@@ -359,7 +361,7 @@ export default function AdminPage() {
   };
 
   if (loading) {
-    return <LoadingScreen />;
+    return showLoader ? <LoadingScreen /> : null;
   }
 
   if (!isAdmin) {

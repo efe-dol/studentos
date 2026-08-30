@@ -14,11 +14,16 @@ DROP POLICY IF EXISTS "profiles_select_own" ON public.profiles;
 DROP POLICY IF EXISTS "profiles_update_own_no_role_change" ON public.profiles;
 DROP POLICY IF EXISTS "profiles_delete_own" ON public.profiles;
 
--- Registration: user may insert only own row
+-- Registration: user may insert only their own row, and only as a plain,
+-- non-blocked user (see migration 020 – prevents delete+re-insert as admin).
 CREATE POLICY "profiles_insert_own"
 ON public.profiles
 FOR INSERT
-WITH CHECK (auth.uid() = id);
+WITH CHECK (
+  auth.uid() = id
+  AND COALESCE(role, 'user') = 'user'
+  AND COALESCE(is_blocked, FALSE) = FALSE
+);
 
 -- Read: user may read only own profile
 CREATE POLICY "profiles_select_own"
@@ -26,7 +31,8 @@ ON public.profiles
 FOR SELECT
 USING (auth.uid() = id);
 
--- Update: user may update only own profile and must not change role
+-- Update: user may update only own profile and must not change role / is_blocked
+-- (see migrations 019/020; additionally enforced by a BEFORE trigger in 021).
 CREATE POLICY "profiles_update_own_no_role_change"
 ON public.profiles
 FOR UPDATE
@@ -34,44 +40,27 @@ USING (auth.uid() = id)
 WITH CHECK (
   auth.uid() = id
   AND role = (
-    SELECT p.role
-    FROM public.profiles p
-    WHERE p.id = auth.uid()
+    SELECT p.role FROM public.profiles p WHERE p.id = auth.uid()
+  )
+  AND is_blocked = (
+    SELECT p.is_blocked FROM public.profiles p WHERE p.id = auth.uid()
   )
 );
 
--- Delete: optional self-delete only
-CREATE POLICY "profiles_delete_own"
-ON public.profiles
-FOR DELETE
-USING (auth.uid() = id);
+-- No self-delete policy: account deletion runs server-side via the service
+-- role on auth.users (ON DELETE CASCADE). A self-delete policy previously
+-- enabled a privilege-escalation (delete own profile, re-insert as admin).
 
 -- Ensure profile row exists right after signup (auth.users insert)
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, pg_temp
 AS $$
 BEGIN
-  INSERT INTO public.profiles (
-    id,
-    first_name,
-    last_name,
-    class_name,
-    birthdate,
-    school,
-    role
-  )
-  VALUES (
-    NEW.id,
-    '',
-    '',
-    '',
-    NULL,
-    'Gymnasium Weilheim i.OB',
-    'user'
-  )
+  INSERT INTO public.profiles (id, first_name, last_name, class_name, school, role)
+  VALUES (NEW.id, '', '', '', 'Gymnasium Weilheim i.OB', 'user')
   ON CONFLICT (id) DO NOTHING;
 
   RETURN NEW;

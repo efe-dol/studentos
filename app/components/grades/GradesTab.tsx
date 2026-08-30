@@ -118,7 +118,7 @@ export default function GradesTab() {
 
   if (selectedSubject) {
     return (
-      <div className={`transition-all duration-300 ${isTransitioning ? 'opacity-0 translate-x-4 scale-[0.98]' : 'opacity-100 translate-x-0 scale-100'}`}>
+      <div key="subject-detail" className={`transition-all duration-300 ${isTransitioning ? 'opacity-0 translate-x-4 scale-[0.98]' : 'opacity-100 translate-x-0 scale-100'}`}>
         <SubjectDetail
           subject={selectedSubject}
           grades={grades}
@@ -135,9 +135,9 @@ export default function GradesTab() {
   const hasError = subjectsError || gradesError;
 
   return (
-    <div className={`space-y-6 animate-in fade-in duration-300 transition-all ${isTransitioning ? 'opacity-0 -translate-x-4 scale-[0.98] pointer-events-none' : 'opacity-100 translate-x-0 scale-100'}`}>
+    <div key="subject-list" className={`space-y-6 content-fade-in transition-all ${isTransitioning ? 'opacity-0 -translate-x-4 scale-[0.98] pointer-events-none' : 'opacity-100 translate-x-0 scale-100'}`}>
       {/* Header */}
-      <div className="flex items-center justify-between gap-3 animate-in slide-in-from-top-2 duration-300">
+      <div className="flex items-center justify-between gap-3 card-stagger-1">
         <div className="flex items-center gap-4 flex-1">
           <div className="p-3 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-lg">
             <BookOpen className="w-6 h-6 text-blue-400" />
@@ -159,7 +159,7 @@ export default function GradesTab() {
 
       {/* Error Message */}
       {hasError && (
-        <div className="flex gap-2 p-4 bg-red-500/10 border border-red-500/30 rounded-lg text-red-300 animate-in fade-in shake duration-300">
+        <div className="flex gap-2 p-4 bg-red-500/10 border border-red-500/30 rounded-lg text-red-300 content-fade-in">
           <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
           <span className="text-sm">{subjectsError || gradesError}</span>
         </div>
@@ -167,11 +167,11 @@ export default function GradesTab() {
 
       {/* Overall Average Card */}
       {!isLoading && (subjects.length > 0 || grades.length > 0) && overallAverage !== null && (
-        <div className="p-6 bg-gradient-to-br from-blue-500/10 to-purple-500/10 border border-blue-500/20 rounded-xl animate-in slide-in-from-top-4 duration-300 delay-100">
+        <div className="p-6 bg-gradient-to-br from-blue-500/10 to-purple-500/10 border border-blue-500/20 rounded-xl card-stagger-2">
           <div className="space-y-3">
             <p className="text-sm font-medium text-gray-400">Durchschnitt gesamt</p>
             <div className="flex items-baseline gap-3">
-              <div className="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
+              <div className="grade-value-animate text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
                 {overallAverage > 0 ? formatAverageGrade(overallAverage) : '—'}
               </div>
               {overallAverage > 0 && (
@@ -187,7 +187,7 @@ export default function GradesTab() {
 
       {/* Loading State */}
       {isLoading ? (
-        <div className="space-y-4 animate-in fade-in duration-300">
+        <div className="space-y-4 card-stagger-2">
           {[1, 2, 3].map(i => (
             <div
               key={i}
@@ -197,29 +197,32 @@ export default function GradesTab() {
           ))}
         </div>
       ) : subjects.length === 0 ? (
-        <div className="text-center py-16 text-gray-400 animate-in fade-in zoom-in duration-300">
+        <div className="text-center py-16 text-gray-400 content-fade-in">
           <BookOpen className="w-12 h-12 mx-auto mb-4 opacity-50" />
           <p className="text-lg font-medium">Keine Fächer vorhanden</p>
           <p className="text-sm text-gray-500 mt-2">Füge dein erstes Fach in den Einstellungen hinzu</p>
         </div>
       ) : (
         <div className="space-y-6">
-            <div className="space-y-3 animate-in slide-in-from-left duration-300 delay-150">
+            <div className="space-y-3 card-stagger-3">
               <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wider px-1">
                 Hauptfächer ({hauptfaecher.length})
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {hauptfaecher.map((subject, idx) => {
                   const subjectGrades = grades.filter(g => g.subject_id === subject.id);
-                  const subjectAverage = calculateSubjectAverage(subjectGrades);
+                  const subjectAverage = calculateSubjectAverage(subjectGrades, subject.sa_double ?? true);
 
                   return (
-                    <button
+                    <div
                       key={subject.id}
+                      className="grade-card-animate"
+                      style={{ animationDelay: `${120 + idx * 55}ms` }}
+                    >
+                    <button
                       onClick={() => handleSelectSubject(subject.id)}
-                      className="p-4 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-lg text-left transition-all group animate-in slide-in-from-left duration-300 hover:scale-[1.02] transform"
+                      className="w-full h-full p-4 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-lg text-left transition-all duration-200 group hover:scale-[1.02] active:scale-[0.99]"
                       disabled={isTransitioning}
-                      style={{ animationDelay: `${150 + idx * 75}ms` }}
                     >
                       <div className="flex items-start justify-between gap-3 mb-3">
                         <div className="flex items-center gap-3 flex-1">
@@ -254,6 +257,7 @@ export default function GradesTab() {
                         </span>
                       </div>
                     </button>
+                    </div>
                   );
                 })}
               </div>
@@ -261,22 +265,25 @@ export default function GradesTab() {
 
           {/* Nebenfächer */}
           {nebenfaecher.length > 0 && (
-            <div className="space-y-3 animate-in slide-in-from-left duration-300 delay-200">
+            <div className="space-y-3 card-stagger-4">
               <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wider px-1">
                 Nebenfächer ({nebenfaecher.length})
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {nebenfaecher.map((subject, idx) => {
                   const subjectGrades = grades.filter(g => g.subject_id === subject.id);
-                  const subjectAverage = calculateSubjectAverage(subjectGrades);
+                  const subjectAverage = calculateSubjectAverage(subjectGrades, subject.sa_double ?? true);
 
                   return (
-                    <button
+                    <div
                       key={subject.id}
+                      className="grade-card-animate"
+                      style={{ animationDelay: `${180 + (hauptfaecher.length + idx) * 55}ms` }}
+                    >
+                    <button
                       onClick={() => handleSelectSubject(subject.id)}
-                      className="p-4 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-lg text-left transition-all group animate-in slide-in-from-left duration-300 hover:scale-[1.02] transform"
+                      className="w-full h-full p-4 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-lg text-left transition-all duration-200 group hover:scale-[1.02] active:scale-[0.99]"
                       disabled={isTransitioning}
-                      style={{ animationDelay: `${200 + (hauptfaecher.length + idx) * 75}ms` }}
                     >
                       <div className="flex items-start justify-between gap-3 mb-3">
                         <div className="flex items-center gap-3 flex-1">
@@ -311,6 +318,7 @@ export default function GradesTab() {
                         </span>
                       </div>
                     </button>
+                    </div>
                   );
                 })}
               </div>

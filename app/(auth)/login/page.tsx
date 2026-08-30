@@ -177,22 +177,25 @@ function LoginContent() {
           </button>
         </div>
 
-        {/* Divider with OR */}
-        <div className="flex items-center my-6 gap-4">
-          <div className="flex-1 border-t border-white/10"></div>
-          <span className="text-sm text-gray-500">ODER</span>
-          <div className="flex-1 border-t border-white/10"></div>
-        </div>
+        {/* Register – im Wartungsmodus ausgeblendet, da Registrierung gesperrt ist */}
+        {!maintenanceMode && (
+          <>
+            <div className="flex items-center my-6 gap-4">
+              <div className="flex-1 border-t border-white/10"></div>
+              <span className="text-sm text-gray-500">ODER</span>
+              <div className="flex-1 border-t border-white/10"></div>
+            </div>
 
-        {/* Register Button */}
-        <div className="mt-4">
-          <a
-            href="/register"
-            className="w-full py-3 rounded-xl border border-white/20 text-gray-300 hover:text-white hover:bg-white/5 font-medium transition-all duration-200 flex items-center justify-center"
-          >
-            Neuen Account erstellen
-          </a>
-        </div>
+            <div className="mt-4">
+              <a
+                href="/register"
+                className="w-full py-3 rounded-xl border border-white/20 text-gray-300 hover:text-white hover:bg-white/5 font-medium transition-all duration-200 flex items-center justify-center"
+              >
+                Neuen Account erstellen
+              </a>
+            </div>
+          </>
+        )}
       </form>
       </div>
 

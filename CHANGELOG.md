@@ -4,6 +4,23 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog, and this project adheres to Semantic Versioning.
 
+## [0.3.0] - 2026-08-30
+
+### Security & Privacy
+- Hardened Supabase RLS: froze `role`/`is_blocked` on self-update, closed a delete+re-insert privilege-escalation, restricted `schedule_shares` reads to the owner (token import via a `SECURITY DEFINER` function), pinned `search_path` on all `SECURITY DEFINER` functions and removed public execute on the cleanup function.
+- Removed unneeded personal data: dropped `profiles.birthdate` and `push_subscriptions.user_agent`.
+- Added self-service data export and account deletion in Settings.
+- Push subscription endpoints are now validated against an allowlist (SSRF hardening); admin user ids are no longer exposed to clients.
+- API error responses no longer leak PostgREST/DB detail; lightweight CSRF origin check and a durable rate-limit primitive were added.
+- Registration now enforces password minimum requirements (client + server) and a confirm-email field.
+
+### Changed
+- Per-subject setting for double-weighting Schulaufgaben (`(KL + 2·GL)/3` vs `(KL + GL)/2`) — for subjects like Physics/Chemistry.
+- ToDos moved back into the dashboard as a tab.
+- Loading animation only appears on genuinely slow loads and is now a plain spinner.
+- Reworked Fächer & Noten, ToDos and landing-page animations.
+- Updated the About version shown on the Dashboard to `v0.3.0`.
+
 ## [0.2.4] - 2026-04-25
 
 ### Changed

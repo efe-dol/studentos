@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import AuthBackground from '@/app/components/common/AuthBackground';
 import LoadingScreen from '@/app/components/common/LoadingScreen';
+import { useDelayedFlag } from '@/lib/hooks/useDelayedFlag';
 import Toast from '@/app/components/common/Toast';
 import SubjectListSettings from '@/app/components/grades/SubjectListSettings';
 import {
@@ -24,7 +25,6 @@ type Profile = {
   first_name: string;
   last_name: string;
   class_name: string;
-  birthdate: string;
   school: string;
   role?: 'user' | 'admin';
 };
@@ -88,10 +88,10 @@ export default function SettingsPage() {
   const [editFirstName, setEditFirstName] = useState('');
   const [editLastName, setEditLastName] = useState('');
   const [editClassName, setEditClassName] = useState('');
-  const [editBirthdate, setEditBirthdate] = useState('');
 
   const supabase = useMemo(() => createClient(), []);
   const router = useRouter();
+  const showLoader = useDelayedFlag(loading);
 
   const handleSaveProfile = async () => {
     if (!user) {
@@ -107,14 +107,13 @@ export default function SettingsPage() {
         first_name: editFirstName,
         last_name: editLastName,
         class_name: editClassName,
-        birthdate: editBirthdate,
         school: FIXED_SCHOOL_NAME,
       })
-      .select('first_name, last_name, class_name, birthdate, school')
+      .select('first_name, last_name, class_name, school')
       .single();
 
     if (error) {
-      setToast({ message: 'Fehler beim Speichern: ' + error.message, type: 'error' });
+      setToast({ message: 'Fehler beim Speichern.', type: 'error' });
       setSavingProfile(false);
       return;
     }
@@ -130,7 +129,6 @@ export default function SettingsPage() {
       setEditFirstName(normalizedSavedProfile.first_name || '');
       setEditLastName(normalizedSavedProfile.last_name || '');
       setEditClassName(normalizedSavedProfile.class_name || '');
-      setEditBirthdate(normalizedSavedProfile.birthdate || '');
       setToast({ message: 'Profil aktualisiert!', type: 'success' });
     }
 
@@ -271,6 +269,57 @@ export default function SettingsPage() {
       localStorage.removeItem('sb_auth_session');
     }
     router.push('/login');
+  };
+
+  const [exportingData, setExportingData] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
+  const [showDeleteAccount, setShowDeleteAccount] = useState(false);
+  const [deleteAccountConfirm, setDeleteAccountConfirm] = useState('');
+
+  const handleExportData = async () => {
+    setExportingData(true);
+    try {
+      const response = await fetch('/api/account/export');
+      if (!response.ok) {
+        throw new Error('Export fehlgeschlagen');
+      }
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'studentos-export.json';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      setToast({ message: 'Daten-Export heruntergeladen.', type: 'success' });
+    } catch (error: unknown) {
+      setToast({ message: error instanceof Error ? error.message : 'Unbekannter Fehler', type: 'error' });
+    } finally {
+      setExportingData(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    setDeletingAccount(true);
+    try {
+      const response = await fetch('/api/account', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ confirm: 'DELETE' }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.error || 'Konto konnte nicht gelöscht werden.');
+      }
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('sb_auth_session');
+      }
+      router.push('/login');
+    } catch (error: unknown) {
+      setToast({ message: error instanceof Error ? error.message : 'Unbekannter Fehler', type: 'error' });
+      setDeletingAccount(false);
+    }
   };
 
   const fetchSchoolYears = async () => {
@@ -450,12 +499,12 @@ export default function SettingsPage() {
         // Fetch profile
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
-          .select('first_name, last_name, class_name, birthdate, school, role')
+          .select('first_name, last_name, class_name, school, role')
           .eq('id', session.user.id)
           .single();
 
         if (profileError) {
-          console.error('Profile fetch error:', profileError);
+          console.error('Profile fetch failed');
         }
 
         if (profileData) {
@@ -471,7 +520,6 @@ export default function SettingsPage() {
           setEditFirstName(normalizedProfile.first_name || '');
           setEditLastName(profileData.last_name || '');
           setEditClassName(profileData.class_name || '');
-          setEditBirthdate(profileData.birthdate || '');
         }
 
         await fetchSchoolYears();
@@ -491,7 +539,7 @@ export default function SettingsPage() {
   }, []);
 
   if (loading) {
-    return <LoadingScreen />;
+    return showLoader ? <LoadingScreen /> : null;
   }
 
   return (
@@ -602,17 +650,6 @@ export default function SettingsPage() {
                       onChange={e => setEditClassName(e.target.value)}
                     />
                     <label>Klasse</label>
-                  </div>
-
-                    <div className="field modal-field-4">
-                    <input
-                      className="focus-glow px-4 py-3 rounded-xl text-white placeholder-transparent w-full bg-white/5 border border-white/10 transform transition-all hover:scale-[1.01] duration-200"
-                      type="date"
-                      placeholder=" "
-                      value={editBirthdate}
-                      onChange={e => setEditBirthdate(e.target.value)}
-                    />
-                    <label>Geburtstag</label>
                   </div>
 
                     <div className="field modal-field-5">
@@ -931,6 +968,21 @@ export default function SettingsPage() {
             </button>
 
             <button
+              onClick={handleExportData}
+              disabled={exportingData}
+              className="w-full flex items-center justify-between p-4 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 transition-all group hover:-translate-y-0.5 active:translate-y-0 duration-200 disabled:opacity-60"
+            >
+              <div className="flex items-center gap-3 text-left">
+                <FileText className="w-5 h-5 text-gray-300 group-hover:scale-110 transition-transform" />
+                <div>
+                  <p className="font-medium text-white">Meine Daten exportieren</p>
+                  <p className="text-sm text-gray-400">Alle zu deinem Konto gespeicherten Daten als JSON-Datei herunterladen</p>
+                </div>
+              </div>
+              <span className="text-gray-400 group-hover:text-white transition-colors">{exportingData ? '…' : '→'}</span>
+            </button>
+
+            <button
               onClick={handleSignOut}
               className="w-full flex items-center justify-between p-4 rounded-lg bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 transition-all group hover:-translate-y-0.5 active:translate-y-0 duration-200"
             >
@@ -943,9 +995,61 @@ export default function SettingsPage() {
               </div>
               <span className="text-gray-400 group-hover:text-white transition-colors">→</span>
             </button>
+
+            <button
+              onClick={() => {
+                setDeleteAccountConfirm('');
+                setShowDeleteAccount(true);
+              }}
+              className="w-full flex items-center justify-between p-4 rounded-lg bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 transition-all group hover:-translate-y-0.5 active:translate-y-0 duration-200"
+            >
+              <div className="flex items-center gap-3 text-left">
+                <LogOut className="w-5 h-5 text-red-400 group-hover:scale-110 transition-transform" />
+                <div>
+                  <p className="font-medium text-white">Konto löschen</p>
+                  <p className="text-sm text-gray-400">Dein Konto und alle zugehörigen Daten unwiderruflich entfernen</p>
+                </div>
+              </div>
+              <span className="text-gray-400 group-hover:text-white transition-colors">→</span>
+            </button>
           </div>
         </div>
       </div>
+
+      {showDeleteAccount && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[80] modal-backdrop-animate">
+          <div className="bg-gradient-to-b from-[#1a1a1a] to-[#0f0f0f] border border-white/10 rounded-2xl p-6 max-w-md w-full mx-4 modal-animate">
+            <h2 className="text-xl font-semibold mb-3">Konto endgültig löschen?</h2>
+            <p className="text-gray-300 leading-relaxed">
+              Dabei werden dein Login sowie alle Noten, Fächer, Hausaufgaben, Termine, To-Dos, Stundenpläne und Share-Links
+              dauerhaft gelöscht. Dies kann nicht rückgängig gemacht werden. Tippe zur Bestätigung <span className="font-semibold text-white">DELETE</span> ein.
+            </p>
+            <input
+              type="text"
+              value={deleteAccountConfirm}
+              onChange={(e) => setDeleteAccountConfirm(e.target.value)}
+              className="w-full mt-4 px-3 py-2 rounded-lg bg-white/5 border border-white/10 focus:outline-none focus:border-red-500/40 text-sm"
+              placeholder="DELETE"
+            />
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setShowDeleteAccount(false)}
+                disabled={deletingAccount}
+                className="flex-1 py-2.5 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 transition-all disabled:opacity-60"
+              >
+                Abbrechen
+              </button>
+              <button
+                onClick={handleDeleteAccount}
+                disabled={deletingAccount || deleteAccountConfirm !== 'DELETE'}
+                className="flex-1 py-2.5 rounded-lg transition-all disabled:opacity-60 bg-red-500/80 hover:bg-red-500 text-white"
+              >
+                {deletingAccount ? 'Wird gelöscht…' : 'Konto löschen'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Toast Notification */}
       {toast && (

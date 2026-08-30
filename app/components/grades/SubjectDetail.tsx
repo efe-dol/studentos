@@ -44,7 +44,8 @@ export default function SubjectDetail({
   };
 
   const subjectGrades = grades.filter(g => g.subject_id === subject.id);
-  const average = calculateSubjectAverage(subjectGrades);
+  const saDouble = (subject as { sa_double?: boolean }).sa_double ?? true;
+  const average = calculateSubjectAverage(subjectGrades, saDouble);
   const klAverage = calculateKLAverage(subjectGrades);
   const glAverage = calculateGLAverage(subjectGrades);
 
@@ -95,31 +96,31 @@ export default function SubjectDetail({
   };
 
   return (
-    <div className="space-y-6 transition-all duration-300">
+    <div className="space-y-6 content-fade-in transition-all duration-300">
       {/* Header */}
-      <div className="flex items-center justify-between gap-4 animate-in slide-in-from-left duration-300 delay-75">
+      <div className="flex items-center justify-between gap-4 card-stagger-1">
         <button
           onClick={handleBackClick}
-          className="p-2 sm:p-2 hover:bg-white/5 rounded-lg transition-colors text-gray-400 hover:text-white flex-shrink-0 hover:scale-110"
+          className="p-2 sm:p-2 hover:bg-white/5 rounded-lg transition-all text-gray-400 hover:text-white flex-shrink-0 hover:scale-110 active:scale-95"
           title="Zurück"
         >
           <ArrowLeft className="w-5 h-5 sm:w-6 sm:h-6" />
         </button>
-        <div className="flex-1 min-w-0 animate-in slide-in-from-left duration-300 delay-100">
+        <div className="flex-1 min-w-0">
           <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2 truncate">{subject.name}</h1>
           <div
-            className="w-8 h-8 rounded-lg animate-in zoom-in duration-300 delay-150"
+            className="grade-value-animate w-8 h-8 rounded-lg"
             style={{ backgroundColor: subject.color }}
           />
         </div>
       </div>
 
       {/* Grade Averages */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 animate-in slide-in-from-bottom duration-300 delay-150">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 card-stagger-2">
         {/* Overall Average */}
-        <div className="bg-gradient-to-br from-blue-500/10 to-purple-500/10 border border-blue-500/20 rounded-lg p-4 sm:p-6 animate-in fade-in duration-300 delay-150" style={{animationFillMode: 'both'}}>
+        <div className="grade-card-animate bg-gradient-to-br from-blue-500/10 to-purple-500/10 border border-blue-500/20 rounded-lg p-4 sm:p-6" style={{ animationDelay: '40ms' }}>
           <div className="text-xs sm:text-sm font-medium text-gray-400 mb-1">Fachdurchschnitt</div>
-          <div className="text-2xl sm:text-3xl font-bold text-white">
+          <div className="grade-value-animate text-2xl sm:text-3xl font-bold text-white">
             {average !== null ? formatAverageGrade(average) : '-'}
           </div>
           {average !== null && (
@@ -128,26 +129,28 @@ export default function SubjectDetail({
         </div>
 
         {/* KL Average */}
-        <div className="bg-gradient-to-br from-green-500/10 to-yellow-500/10 border border-green-500/20 rounded-lg p-4 sm:p-6 animate-in fade-in duration-300 delay-200" style={{animationFillMode: 'both'}}>
+        <div className="grade-card-animate bg-gradient-to-br from-green-500/10 to-yellow-500/10 border border-green-500/20 rounded-lg p-4 sm:p-6" style={{ animationDelay: '110ms' }}>
           <div className="text-xs sm:text-sm font-medium text-gray-400 mb-1">KL Durchschnitt</div>
-          <div className="text-2xl sm:text-3xl font-bold text-white">
+          <div className="grade-value-animate text-2xl sm:text-3xl font-bold text-white">
             {klAverage !== null ? formatAverageGrade(klAverage) : '-'}
           </div>
           <div className="text-xs text-gray-500 mt-2">Kleine Leistungsnachweise</div>
         </div>
 
         {/* GL Average */}
-        <div className="bg-gradient-to-br from-orange-500/10 to-red-500/10 border border-orange-500/20 rounded-lg p-4 sm:p-6 animate-in fade-in duration-300 delay-250" style={{animationFillMode: 'both'}}>
+        <div className="grade-card-animate bg-gradient-to-br from-orange-500/10 to-red-500/10 border border-orange-500/20 rounded-lg p-4 sm:p-6" style={{ animationDelay: '180ms' }}>
           <div className="text-xs sm:text-sm font-medium text-gray-400 mb-1">GL Durchschnitt</div>
-          <div className="text-2xl sm:text-3xl font-bold text-white">
+          <div className="grade-value-animate text-2xl sm:text-3xl font-bold text-white">
             {glAverage !== null ? formatAverageGrade(glAverage) : '-'}
           </div>
-          <div className="text-xs text-gray-500 mt-2">Große Leistungsnachweise (2x)</div>
+          <div className="text-xs text-gray-500 mt-2">
+            Große Leistungsnachweise{saDouble ? ' (×2)' : ''}
+          </div>
         </div>
       </div>
 
       {/* Grades List */}
-      <div className="bg-white/5 border border-white/10 rounded-lg overflow-hidden animate-in slide-in-from-bottom duration-300 delay-300" style={{animationFillMode: 'both'}}>
+      <div className="bg-white/5 border border-white/10 rounded-lg overflow-hidden card-stagger-3">
         <div className="p-4 sm:p-6 border-b border-white/10 flex items-center justify-between">
           <h2 className="text-base sm:text-lg font-bold text-white">
             Noten ({subjectGrades.length})
@@ -178,8 +181,8 @@ export default function SubjectDetail({
             {subjectGrades.map((grade, idx) => (
               <div
                 key={grade.id}
-                className="p-4 sm:p-6 hover:bg-white/5 transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 group animate-in slide-in-from-left duration-300"
-                style={{ animationDelay: `${300 + idx * 50}ms`, animationFillMode: 'both' }}
+                className="grade-item-animate p-4 sm:p-6 hover:bg-white/5 transition-colors flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 group"
+                style={{ animationDelay: `${idx * 45}ms` }}
               >
                 <div className="flex-1 min-w-0 w-full">
                   <div className="flex items-center gap-3 mb-2">
@@ -226,7 +229,7 @@ export default function SubjectDetail({
         )}
       </div>
 
-      <div className="flex gap-3 animate-in slide-in-from-bottom duration-300 delay-350" style={{animationFillMode: 'both'}}>
+      <div className="flex gap-3 card-stagger-4">
         <button
           onClick={handleBackClick}
           className="flex-1 px-4 py-2 sm:py-3 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-gray-300 font-medium transition-all text-sm sm:text-base"

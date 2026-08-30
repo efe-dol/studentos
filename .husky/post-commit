@@ -1,7 +1,7 @@
 #!/bin/sh
 . "$(dirname "$0")/_/husky.sh"
 
-# Automatically push to GitHub after commit
-exec 2>/dev/null
-git push origin $(git rev-parse --abbrev-ref HEAD) &
+# Auto-push on every commit was removed for security: it published work
+# (potentially including secrets or unreviewed changes) to the remote before
+# any review. Push explicitly with `git push` when you are ready.
 exit 0

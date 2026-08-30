@@ -88,7 +88,7 @@ export async function PATCH(
     }
 
     if (error && !isMissingIsBlockedError(error)) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 
     if (error && isMissingIsBlockedError(error)) {
@@ -106,7 +106,7 @@ export async function PATCH(
         .single();
 
       if (fallbackError) {
-        return NextResponse.json({ error: fallbackError.message }, { status: 500 });
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
       }
 
       return NextResponse.json(
@@ -164,7 +164,7 @@ export async function DELETE(
     const { error } = await adminClient.auth.admin.deleteUser(id);
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 
     return NextResponse.json({ success: true }, { status: 200 });

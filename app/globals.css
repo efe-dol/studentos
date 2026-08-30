@@ -455,6 +455,93 @@ button, a, input {
   animation: appointmentItemIn 0.35s ease-out forwards;
 }
 
+/* Fächer & Noten Animations */
+@keyframes gradeCardIn {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.grade-card-animate {
+  opacity: 0;
+  animation: gradeCardIn 0.42s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes gradeItemIn {
+  from {
+    opacity: 0;
+    transform: translateX(-14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.grade-item-animate {
+  opacity: 0;
+  animation: gradeItemIn 0.34s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes gradeValueIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.72);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.grade-value-animate {
+  animation: gradeValueIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes selectMenuIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.select-menu-animate {
+  animation: selectMenuIn 0.14s ease-out;
+  transform-origin: top;
+}
+
+/* Landing page */
+@keyframes landingFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.landing-float {
+  animation: landingFloat 5s ease-in-out infinite;
+}
+
+@keyframes landingGlow {
+  0%, 100% { opacity: 0.35; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.08); }
+}
+
+.landing-glow {
+  animation: landingGlow 7s ease-in-out infinite;
+}
+
 /* Toast Animations */
 @keyframes toastSlideOut {
   from {
@@ -538,6 +625,12 @@ button, a, input {
   .card-stagger-1, .card-stagger-2, .card-stagger-3, .card-stagger-4, .card-stagger-5, .card-stagger-6 { animation: none; opacity: 1; }
   .content-fade-in { animation: none; }
   .appointment-item-animate { animation: none; opacity: 1; }
+  .grade-card-animate { animation: none; opacity: 1; transform: none; }
+  .grade-item-animate { animation: none; opacity: 1; transform: none; }
+  .grade-value-animate { animation: none; }
+  .select-menu-animate { animation: none; }
+  .landing-float { animation: none; }
+  .landing-glow { animation: none; }
   .animate-\[toastSlideOut_0\.28s_ease-in_forwards\] { animation: none; }
   .animate-\[toastShimmer_1\.8s_ease-in-out_infinite\] { animation: none; }
   .animate-\[toastProgress_linear_forwards\] { animation: none; width: 0; }

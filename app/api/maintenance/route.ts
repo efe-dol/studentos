@@ -17,15 +17,15 @@ export async function GET() {
   try {
     const supabase = await createClient();
     
-    // Get active maintenance messages
+    // Get active maintenance messages (no created_by / internal columns exposed)
     const { data: messages, error } = await supabase
       .from('maintenance_messages')
-      .select('*')
+      .select('id, message, is_active, created_at, updated_at')
       .eq('is_active', true)
       .order('created_at', { ascending: false });
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 
     return NextResponse.json({ messages: messages || [] }, { status: 200 });
@@ -62,11 +62,11 @@ export async function POST(request: NextRequest) {
         is_active: is_active ?? true,
         created_by: user.id,
       })
-      .select()
+      .select('id, message, is_active, created_at, updated_at')
       .single();
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 
     return NextResponse.json({ message: maintenanceMessage }, { status: 201 });

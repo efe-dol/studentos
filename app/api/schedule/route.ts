@@ -33,7 +33,7 @@ export async function GET() {
       .order('start_time', { ascending: true });
 
     if (error && !isMissingIsBreakColumnError(error)) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 
     if (error && isMissingIsBreakColumnError(error)) {
@@ -47,7 +47,7 @@ export async function GET() {
         .order('start_time', { ascending: true });
 
       if (fallbackError) {
-        return NextResponse.json({ error: fallbackError.message }, { status: 500 });
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
       }
 
       const normalizedFallback = (fallbackData || []).map((entry) => ({
@@ -138,7 +138,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error && !isMissingIsBreakColumnError(error)) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 
     if (error && isMissingIsBreakColumnError(error)) {
@@ -168,7 +168,7 @@ export async function POST(request: NextRequest) {
         .single();
 
       if (fallbackInsertError) {
-        return NextResponse.json({ error: fallbackInsertError.message }, { status: 500 });
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
       }
 
       return NextResponse.json(

@@ -72,7 +72,7 @@ export async function PUT(
       .single();
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
+      return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
     }
 
     return NextResponse.json(data);
@@ -119,7 +119,7 @@ export async function DELETE(
       .eq('school_year_id', activeSchoolYearId);
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
+      return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
     }
 
     return NextResponse.json({ success: true });

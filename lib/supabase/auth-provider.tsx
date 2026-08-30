@@ -10,7 +10,10 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-const SESSION_STORAGE_KEY = 'sb_auth_session';
+// Legacy key: earlier versions cached the full session (incl. refresh token) in
+// localStorage. That is a token-leak risk (readable by any script/XSS/extension),
+// so we no longer write it and actively clear any leftover value below.
+const LEGACY_SESSION_STORAGE_KEY = 'sb_auth_session';
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -23,41 +26,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const initializeAuth = async () => {
       try {
-        // Versuche zuerst, die Session aus der Middleware/Cookies zu laden
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
+        // Drop any token cached by older builds.
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem(LEGACY_SESSION_STORAGE_KEY);
+        }
+
+        // Session stammt ausschließlich aus den (httpOnly) Auth-Cookies.
+        const { data: { session } } = await supabase.auth.getSession();
+
         if (isMounted) {
-          if (session) {
-            setSession(session);
-            setUser(session?.user ?? null);
-            // Speichere die Session im localStorage als Backup
-            if (typeof window !== 'undefined') {
-              localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify({
-                session,
-                timestamp: Date.now(),
-              }));
-            }
-          } else {
-            // Falls keine Session in Cookies, versuche localStorage zu laden
-            if (typeof window !== 'undefined') {
-              const stored = localStorage.getItem(SESSION_STORAGE_KEY);
-              if (stored) {
-                try {
-                  const { session: savedSession } = JSON.parse(stored);
-                  setSession(savedSession);
-                  setUser(savedSession?.user ?? null);
-                } catch (e) {
-                  console.error('Failed to parse stored session:', e);
-                  setSession(null);
-                  setUser(null);
-                  localStorage.removeItem(SESSION_STORAGE_KEY);
-                }
-              } else {
-                setSession(null);
-                setUser(null);
-              }
-            }
-          }
+          setSession(session ?? null);
+          setUser(session?.user ?? null);
         }
       } catch (error) {
         console.error('Auth initialization error:', error);
@@ -80,17 +59,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (isMounted) {
           setSession(session);
           setUser(session?.user ?? null);
-          
-          // Speichere jeden Auth-Change
+
           if (typeof window !== 'undefined') {
-            if (session) {
-              localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify({
-                session,
-                timestamp: Date.now(),
-              }));
-            } else {
-              localStorage.removeItem(SESSION_STORAGE_KEY);
-            }
+            localStorage.removeItem(LEGACY_SESSION_STORAGE_KEY);
           }
         }
       }

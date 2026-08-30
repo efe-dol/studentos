@@ -14,7 +14,18 @@ interface EditState {
   color: string;
   default_room: string;
   default_teacher: string;
+  sa_double: boolean;
 }
+
+const EMPTY_EDIT_STATE: EditState = {
+  isOpen: false,
+  name: '',
+  type: 'HAUPTFACH',
+  color: '#3b82f6',
+  default_room: '',
+  default_teacher: '',
+  sa_double: true,
+};
 
 const COLOR_PRESETS = [
   '#ef4444', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#3b82f6',
@@ -26,14 +37,7 @@ const COLOR_PRESETS = [
 
 export default function SubjectListSettings() {
   const [showAddDialog, setShowAddDialog] = useState(false);
-  const [editState, setEditState] = useState<EditState>({
-    isOpen: false,
-    name: '',
-    type: 'HAUPTFACH',
-    color: '#3b82f6',
-    default_room: '',
-    default_teacher: '',
-  });
+  const [editState, setEditState] = useState<EditState>(EMPTY_EDIT_STATE);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [isMounted, setIsMounted] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -69,6 +73,7 @@ export default function SubjectListSettings() {
       color: subject.color,
       default_room: subject.default_room || '',
       default_teacher: subject.default_teacher || '',
+      sa_double: subject.sa_double ?? true,
     });
   };
 
@@ -83,15 +88,9 @@ export default function SubjectListSettings() {
         color: editState.color,
         default_room: editState.default_room,
         default_teacher: editState.default_teacher,
+        sa_double: editState.type === 'HAUPTFACH' ? editState.sa_double : true,
       });
-      setEditState({
-        isOpen: false,
-        name: '',
-        type: 'HAUPTFACH',
-        color: '#3b82f6',
-        default_room: '',
-        default_teacher: '',
-      });
+      setEditState(EMPTY_EDIT_STATE);
     } finally {
       setIsSaving(false);
     }
@@ -265,8 +264,8 @@ export default function SubjectListSettings() {
       <AddSubjectDialog
         isOpen={showAddDialog}
         onClose={() => setShowAddDialog(false)}
-        onAdd={async (name, type, color, defaultRoom, defaultTeacher) => {
-          await addSubject(name, type, color, defaultRoom, defaultTeacher);
+        onAdd={async (name, type, color, defaultRoom, defaultTeacher, saDouble) => {
+          await addSubject(name, type, color, defaultRoom, defaultTeacher, saDouble);
         }}
       />
 
@@ -314,6 +313,25 @@ export default function SubjectListSettings() {
                   ))}
                 </div>
               </div>
+
+              {editState.type === 'HAUPTFACH' && (
+                <div className="modal-field-3 rounded-lg border border-white/10 bg-white/5 p-3">
+                  <label className="flex items-center justify-between gap-3 text-sm text-gray-200">
+                    <span>Schulaufgaben doppelt gewichten</span>
+                    <input
+                      type="checkbox"
+                      checked={editState.sa_double}
+                      onChange={(e) => setEditState({ ...editState, sa_double: e.target.checked })}
+                      className="h-4 w-4 rounded border-white/20 bg-black/40"
+                      disabled={isSaving}
+                    />
+                  </label>
+                  <p className="text-xs text-gray-400 mt-1">
+                    An: (Ø kleine LN + 2 × Ø Schulaufgabe) / 3 &nbsp;·&nbsp; Aus: (Ø kleine LN + Ø Schulaufgabe) / 2.
+                    Für Fächer wie Physik oder Chemie ausschalten.
+                  </p>
+                </div>
+              )}
 
               <div className="modal-field-4">
                 <label className="block text-sm font-medium text-gray-300 mb-2">
@@ -370,16 +388,7 @@ export default function SubjectListSettings() {
 
             <div className="flex gap-3 flex-col sm:flex-row modal-buttons-animate">
               <button
-                onClick={() =>
-                  setEditState({
-                    isOpen: false,
-                    name: '',
-                    type: 'HAUPTFACH',
-                    color: '#3b82f6',
-                    default_room: '',
-                    default_teacher: '',
-                  })
-                }
+                onClick={() => setEditState(EMPTY_EDIT_STATE)}
                 className="flex-1 px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-gray-300 font-medium text-base transition-all transform hover:scale-[1.02] active:scale-[0.98] duration-200"
                 disabled={isSaving}
               >

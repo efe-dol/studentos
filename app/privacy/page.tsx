@@ -50,22 +50,33 @@ export default function PrivacyPage() {
                   angeforderte Ressource sowie Browser-/Systeminformationen), um Stabilität und Sicherheit des Betriebs sicherzustellen.
                 </p>
                 <p>
-                  Für dein Benutzerkonto verarbeitet Supabase insbesondere E-Mail-Adresse, Authentifizierungsdaten (Passwörter ausschließlich
-                  gehasht/verschlüsselt) sowie Session-/Authentifizierungs-Cookies für Login und Zugriffsschutz.
+                  Für dein Benutzerkonto verarbeitet Supabase insbesondere die E-Mail-Adresse, Authentifizierungsdaten
+                  (Passwörter ausschließlich serverseitig gehasht) sowie Session-/Authentifizierungs-Cookies für Login und
+                  Zugriffsschutz. Bei der Registrierung wird die E-Mail-Adresse per Bestätigungslink verifiziert
+                  (Double-Opt-In); vorher ist keine Anmeldung möglich.
                 </p>
                 <p>
-                  Je nach Nutzung werden zusätzlich folgende Datenkategorien verarbeitet: Profildaten (Name, Klasse, Geburtstag, Schule,
-                  Rolle), schulische Daten (Hausaufgaben, Noten, Fächer inkl. Farben/Räumen/Lehrkraft, Stundenplan, Termine, To-Dos),
-                  Push-Benachrichtigungsdaten (Endpoint/Schlüssel p256dh/auth), Share-Token für die Teilen-Funktion sowie technische
-                  Schutz- und Betriebsdaten (z. B. Rate-Limiting-Metadaten).
+                  Je nach Nutzung werden zusätzlich folgende Datenkategorien verarbeitet: Profildaten (Vor- und Nachname,
+                  Klasse, Schule, Rolle), schulische Daten (Hausaufgaben, Noten, Fächer inkl. Farben/Räumen/Lehrkraft-Kürzeln,
+                  Stundenplan, Termine, To-Dos), Push-Benachrichtigungsdaten (Endpoint, Schlüssel p256dh/auth), Share-Token für
+                  die Stundenplan-Teilen-Funktion sowie technische Schutz- und Betriebsdaten (z. B. IP-basierte Request-Zähler
+                  zum Missbrauchsschutz). Ein Geburtsdatum wird nicht mehr erhoben.
                 </p>
                 <p>
-                  Für das Formular „Feedback / Bug-Reports“ wird Formspree als externer Formular-Dienst eingesetzt. Dabei werden die
-                  eingegebenen Angaben Vorname, Nachname und Nachricht zur Bearbeitung des Anliegens verarbeitet und übertragen.
+                  Raum- und Lehrkraft-Angaben in Fächern/Stundenplan gibst du selbst ein. Wenn du deinen Stundenplan über einen
+                  Link teilst, werden diese Angaben in den Share-Datensatz kopiert und sind für Personen mit dem Link
+                  importierbar. Teile Stundenpläne daher nur mit Personen deines Vertrauens; erstellte Links kannst du im
+                  Dashboard jederzeit widerrufen.
+                </p>
+                <p>
+                  Für das Formular „Feedback / Bug-Reports“ wird Formspree (Formspree, Inc., USA) als externer Formular-Dienst
+                  eingesetzt. Übertragen werden die von dir eingegebenen Angaben Vorname, Nachname, optionale E-Mail-Adresse und
+                  Nachricht zur Bearbeitung des Anliegens.
                 </p>
                 <p>
                   Technische Schutzmaßnahmen verarbeiten zudem Verbindungs-Metadaten wie IP-basierte Request-Zählungen
-                  (Rate-Limiting im laufenden Serverprozess) und Sicherheitsheader (z. B. Autorisierungsheader für interne Cron-Prozesse).
+                  (Rate-Limiting; kurzzeitig in der Datenbank gespeicherte Zähler pro IP/Endpunkt, automatische Löschung nach spätestens 24 Stunden)
+                  und Sicherheitsheader (z. B. Autorisierungsheader für interne Cron-Prozesse).
                 </p>
               </div>
             </section>
@@ -86,11 +97,39 @@ export default function PrivacyPage() {
             </section>
 
             <section className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-6 sm:p-8 content-fade-in">
+              <h2 className="text-xl sm:text-2xl font-semibold mb-4">Cookies &amp; Tracking</h2>
+              <div className="space-y-4 text-sm sm:text-base text-gray-300 leading-relaxed">
+                <p>
+                  Es werden ausschließlich technisch notwendige Cookies gesetzt (Session-/Authentifizierungs-Cookies für den
+                  Login). Diese sind – soweit möglich – <code>httpOnly</code>, <code>Secure</code> und <code>SameSite=Lax</code>
+                  gesetzt.
+                </p>
+                <p>
+                  Es findet <span className="font-semibold text-white">keine Werbung, kein Analyse-/Tracking-Tool und kein
+                  Third-Party-Cookie</span> statt. Es werden keine Nutzungsprofile gebildet.
+                </p>
+              </div>
+            </section>
+
+            <section className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-6 sm:p-8 content-fade-in">
               <h2 className="text-xl sm:text-2xl font-semibold mb-4">Dauer der Speicherung</h2>
-              <p className="text-gray-300 leading-relaxed text-sm sm:text-base">
-                Deine Daten werden nur so lange gespeichert, wie dein Account aktiv ist. Mit der Löschung deines Accounts werden
-                personenbezogene Daten in Supabase grundsätzlich gelöscht (inklusive zugehöriger Datensätze, soweit technisch verknüpft).
-              </p>
+              <div className="space-y-3 text-sm sm:text-base text-gray-300 leading-relaxed">
+                <p>
+                  Konto- und Inhaltsdaten werden gespeichert, solange dein Account besteht. Zusätzlich gelten automatische
+                  Löschfristen:
+                </p>
+                <ul className="list-disc pl-5 space-y-1">
+                  <li>erledigte To-Dos: automatische Löschung ca. 30 Tage nach Erledigung</li>
+                  <li>Hausaufgaben: automatische Löschung ca. 30 Tage nach Erstellung</li>
+                  <li>Stundenplan-Share-Links: Ablauf und Löschung nach 30 Tagen (oder früher bei Widerruf)</li>
+                  <li>Rate-Limiting-Zähler: Löschung spätestens nach 24 Stunden</li>
+                </ul>
+                <p>
+                  Mit der Löschung deines Kontos (in den Einstellungen selbst auslösbar) werden dein Login sowie alle damit
+                  verknüpften Datensätze in Supabase per Kaskade gelöscht. Server-Logfiles bei Vercel werden nach den dortigen
+                  Fristen automatisch gelöscht.
+                </p>
+              </div>
             </section>
 
             <section className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-6 sm:p-8 content-fade-in">
@@ -106,7 +145,8 @@ export default function PrivacyPage() {
               <h2 className="text-xl sm:text-2xl font-semibold mb-4">Betroffenenrechte</h2>
               <p className="text-gray-300 leading-relaxed text-sm sm:text-base">
                 Du hast im Rahmen der gesetzlichen Vorgaben insbesondere das Recht auf Auskunft über gespeicherte personenbezogene Daten
-                sowie auf Löschung. Anfragen kannst du an efedolaman@gmail.com richten.
+                sowie auf Löschung. In den Einstellungen kannst du deine gespeicherten Daten direkt als Datei exportieren und dein
+                Konto samt aller zugehörigen Daten selbst löschen. Weitere Anfragen kannst du an efedolaman@gmail.com richten.
               </p>
               <p className="text-gray-300 leading-relaxed text-sm sm:text-base mt-4">
                 Zusätzlich bestehen – soweit einschlägig – Rechte auf Berichtigung, Einschränkung der Verarbeitung und Datenübertragbarkeit.
@@ -121,7 +161,7 @@ export default function PrivacyPage() {
                 Eignung für bestimmte Zwecke übernommen; eine Haftung für Datenverlust oder Funktionsfehler wird, soweit gesetzlich
                 zulässig, ausgeschlossen.
               </p>
-              <p className="text-xs text-gray-400 mt-4">Stand: 02.03.2026</p>
+              <p className="text-xs text-gray-400 mt-4">Stand: 30.08.2026</p>
               <p className="text-xs text-gray-500 mt-2">Copyright {new Date().getFullYear()} StudentOS by Efe Dolaman</p>
             </section>
           </div>

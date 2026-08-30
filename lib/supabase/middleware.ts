@@ -1,6 +1,17 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 
+const isProd = process.env.NODE_ENV === 'production'
+
+const hardenCookieOptions = <T extends { sameSite?: unknown; secure?: boolean; httpOnly?: boolean; path?: string }>(
+  options: T
+): T => ({
+  ...options,
+  sameSite: (options.sameSite as 'lax' | 'strict' | 'none' | undefined) ?? 'lax',
+  secure: options.secure ?? isProd,
+  path: options.path ?? '/',
+})
+
 export async function updateSession(request: NextRequest) {
   const response = NextResponse.next({ request })
 
@@ -15,15 +26,16 @@ export async function updateSession(request: NextRequest) {
           },
           setAll(cookiesToSet) {
             cookiesToSet.forEach(({ name, value, options }) => {
-              response.cookies.set(name, value, options)
+              response.cookies.set(name, value, hardenCookieOptions(options ?? {}))
             })
           },
         },
       }
     )
 
-    // Erhalte die aktuelle Session
-    const { data: { session } } = await supabase.auth.getSession()
+    // Verifizierten Benutzer laden (getUser validiert das JWT serverseitig und
+    // erneuert bei Bedarf die Auth-Cookies; getSession vertraut ungeprüft dem Cookie).
+    const { data: { user } } = await supabase.auth.getUser()
 
     let maintenanceMode = false
     const { data: maintenanceSettings } = await supabase
@@ -35,18 +47,18 @@ export async function updateSession(request: NextRequest) {
     maintenanceMode = Boolean(maintenanceSettings?.maintenance_mode)
 
     let profile: { role?: 'user' | 'admin'; is_blocked?: boolean } | null = null
-    if (session?.user?.id) {
+    if (user?.id) {
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('role, is_blocked')
-        .eq('id', session.user.id)
+        .eq('id', user.id)
         .single()
 
       if (profileError && String(profileError.message || '').toLowerCase().includes('is_blocked')) {
         const { data: fallbackProfile } = await supabase
           .from('profiles')
           .select('role')
-          .eq('id', session.user.id)
+          .eq('id', user.id)
           .single()
 
         profile = {
@@ -92,7 +104,7 @@ export async function updateSession(request: NextRequest) {
       return NextResponse.redirect(loginUrl)
     }
 
-    if (session && maintenanceMode && profile?.role !== 'admin' && !isLoginPage && !isPrivacyPage && !isImpressumPage) {
+    if (user && maintenanceMode && profile?.role !== 'admin' && !isLoginPage && !isPrivacyPage && !isImpressumPage) {
       const loginUrl = request.nextUrl.clone()
       loginUrl.pathname = '/login'
       loginUrl.searchParams.set('maintenance', '1')
@@ -100,7 +112,7 @@ export async function updateSession(request: NextRequest) {
     }
 
     // Ohne Session sind /, /privacy, /impressum sowie Login/Register öffentlich (API-Routen sind ausgenommen).
-    if (!session && !isPublicWithoutSession && !isApiRoute) {
+    if (!user && !isPublicWithoutSession && !isApiRoute) {
       const loginUrl = request.nextUrl.clone()
       loginUrl.pathname = '/login'
       return NextResponse.redirect(loginUrl)
@@ -108,7 +120,7 @@ export async function updateSession(request: NextRequest) {
 
     // Wenn auf login/register und Session existiert, redirect zu dashboard
     if (
-      session &&
+      user &&
       (isLoginPage || isRegisterPage) &&
       !profile?.is_blocked &&
       !(maintenanceMode && profile?.role !== 'admin')
@@ -117,8 +129,8 @@ export async function updateSession(request: NextRequest) {
       dashboardUrl.pathname = '/dashboard'
       return NextResponse.redirect(dashboardUrl)
     }
-  } catch (error) {
-    console.error('Middleware error:', error)
+  } catch {
+    console.error('Proxy/session check failed')
   }
 
   return response

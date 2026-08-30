@@ -42,11 +42,11 @@ export async function PATCH(
       .from('maintenance_messages')
       .update(updateData)
       .eq('id', id)
-      .select()
+      .select('id, message, is_active, created_at, updated_at')
       .single();
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 
     if (!maintenanceMessage) {
@@ -83,7 +83,7 @@ export async function DELETE(
       .eq('id', id);
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 
     return NextResponse.json({ message: 'Message deleted' }, { status: 200 });

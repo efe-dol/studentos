@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
       .limit(maxBatchSize);
 
     if (remindersError) {
-      return NextResponse.json({ error: remindersError.message }, { status: 500 });
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 
     const reminders = (dueReminders || []) as DueReminderRow[];
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
       .in('id', appointmentIds);
 
     if (appointmentsError) {
-      return NextResponse.json({ error: appointmentsError.message }, { status: 500 });
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 
     const appointmentsById = new Map<string, AppointmentRow>();
@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
       .in('user_id', userIds);
 
     if (subscriptionError) {
-      return NextResponse.json({ error: subscriptionError.message }, { status: 500 });
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 
     const subscriptionsByUser = new Map<string, typeof subscriptions>();
