@@ -523,6 +523,24 @@ button, a, input {
   transform-origin: top;
 }
 
+/* Fix: the global `* { transform: translateZ(0) }` rule turns Tailwind's
+   to-only `@keyframes spin` into an identity->identity interpolation, so
+   `animate-spin` never visibly moves. Redefining spin with an explicit
+   `from` restores a real rotation everywhere. */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes appSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.app-spinner {
+  animation: appSpin 0.8s linear infinite;
+}
+
 /* Landing page */
 @keyframes landingFloat {
   0%, 100% { transform: translateY(0); }
